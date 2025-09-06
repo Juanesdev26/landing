@@ -55,4 +55,23 @@ CREATE TRIGGER trg_user_offers_updated_at
 BEFORE UPDATE ON public.user_offers
 FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
 
+-- 5) Create global offers table (offers visible to all users)
+CREATE TABLE IF NOT EXISTS public.offers (
+  id_offer uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id uuid NOT NULL REFERENCES public.products(id_product) ON DELETE CASCADE,
+  discount_percent numeric NOT NULL CHECK (discount_percent >= 0 AND discount_percent <= 100),
+  is_active boolean DEFAULT true,
+  valid_from timestamptz,
+  valid_to timestamptz,
+  notes text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  CONSTRAINT offers_unique_product UNIQUE (product_id)
+);
+
+DROP TRIGGER IF EXISTS trg_offers_updated_at ON public.offers;
+CREATE TRIGGER trg_offers_updated_at
+BEFORE UPDATE ON public.offers
+FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
 

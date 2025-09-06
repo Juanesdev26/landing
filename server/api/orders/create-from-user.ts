@@ -45,12 +45,11 @@ export default defineEventHandler(async (event) => {
     let subtotal = 0
     const orderItems: Array<{ product_id: string; quantity: number; unit_price: number; total_price: number }> = []
 
-    // Pre-cargar ofertas del usuario
+    // Pre-cargar ofertas globales activas y vigentes
     const nowIso = new Date().toISOString()
     const { data: offers } = await supabase
-      .from('user_offers')
+      .from('offers')
       .select('product_id, discount_percent, is_active, valid_from, valid_to')
-      .eq('user_id', authUser.id)
       .eq('is_active', true)
 
     const offerMap = new Map<string, number>()

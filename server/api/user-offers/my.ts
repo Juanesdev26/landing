@@ -33,5 +33,3 @@ export default defineEventHandler(async (event) => {
     return respondError('Error interno del servidor')
   }
 })
-
-

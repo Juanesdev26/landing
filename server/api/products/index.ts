@@ -8,15 +8,33 @@ export default defineEventHandler(async (event) => {
   try {
     switch (method) {
       case 'GET':
-        // Obtener todos los productos con sus categorías
-        const { data: products, error: getError } = await client
+        // Obtener productos con filtros opcionales y paginación
+        const query = getQuery(event) as Record<string, string>
+        const categoryId = query.category_id ? String(query.category_id) : undefined
+        const search = query.search ? String(query.search) : undefined
+        const page = query.page ? Math.max(1, parseInt(String(query.page))) : undefined
+        const pageSize = query.page_size ? Math.max(1, parseInt(String(query.page_size))) : undefined
+
+        let builder = client
           .from('products')
           .select(`
             *,
             category:categories(name)
           `)
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false }) as any
 
+        if (categoryId) builder = builder.eq('category_id', categoryId)
+        if (search && search.trim()) {
+          const like = `%${search.trim()}%`
+          builder = builder.or(`name.ilike.${like},sku.ilike.${like}`)
+        }
+        if (page && pageSize) {
+          const from = (page - 1) * pageSize
+          const to = from + pageSize - 1
+          builder = builder.range(from, to)
+        }
+
+        const { data: products, error: getError } = await builder
         if (getError) throw getError
 
         return respondSuccess(products)

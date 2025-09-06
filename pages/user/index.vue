@@ -11,7 +11,7 @@
       <div v-if="loading" class="text-gray-600">Cargando ofertas...</div>
       <div v-else>
         <div v-if="offers.length === 0" class="bg-white rounded-lg p-8 text-center text-gray-600 shadow-sm">
-          No tienes ofertas asignadas por el momento.
+          No hay ofertas disponibles por el momento.
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -56,7 +56,7 @@ const discountedPrice = (price, percent) => {
 const fetchOffers = async () => {
   loading.value = true
   try {
-    const { data } = await $fetch('/api/user-offers/my')
+    const { data } = await $fetch('/api/offers/active')
     if (data?.success) {
       offers.value = data.data
     }
