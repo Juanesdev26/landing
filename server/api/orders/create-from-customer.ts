@@ -108,20 +108,7 @@ export default defineEventHandler(async (event) => {
       return respondError('Error creando items del pedido', itemsError.message)
     }
 
-    // Actualizar stock
-    for (const item of orderItems) {
-      const { data: p } = await supabase
-        .from('products')
-        .select('stock_quantity')
-        .eq('id_product', item.product_id)
-        .single()
-      const newStock = Math.max(0, (p as any).stock_quantity - item.quantity)
-      const { error: stockError } = await (supabase
-        .from('products') as any)
-        .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
-        .eq('id_product', item.product_id)
-      if (stockError) console.error('Error actualizando stock:', stockError)
-    }
+    // No descontar stock aquí; se descontará al confirmar el pedido
 
     return respondSuccess(orderData, 'Pedido creado exitosamente')
   } catch (error) {

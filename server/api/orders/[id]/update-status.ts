@@ -186,22 +186,14 @@ export default defineEventHandler(async (event) => {
         console.error('Error obteniendo items para restaurar stock:', itemsError)
       } else if (orderItems) {
         for (const item of orderItems) {
-          const { error: stockError } = await (supabase as any)
-            .from('products')
-            .update({ 
-              stock_quantity: (supabase as any).raw(`stock_quantity + ${item.quantity}`),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id_product', item.product_id)
-
-          if (stockError) {
-            console.error('Error restaurando stock:', stockError)
-          }
+          const rpcRes = await (supabase as any).rpc('adjust_product_stock', { p_id_product: item.product_id, p_delta: Number(item.quantity) })
+          const stockError = (rpcRes as any).error
+          if (stockError) console.error('Error restaurando stock via RPC:', stockError)
         }
       }
     }
 
-    // Si el pedido se confirma desde pendiente, verificar stock nuevamente
+    // Si el pedido se confirma desde pendiente, verificar stock y descontar
     if (newStatus === 'confirmed' && currentStatus === 'pending') {
       const orderItemsRes = await supabase
         .from('order_items')
@@ -226,7 +218,20 @@ export default defineEventHandler(async (event) => {
             console.error('Error verificando stock del producto:', productError)
           } else if (product.stock_quantity < item.quantity) {
             console.warn(`Stock insuficiente para ${product.name} al confirmar pedido`)
+            return {
+              data: {
+                success: false,
+                error: `Stock insuficiente para ${product.name}`
+              }
+            }
           }
+        }
+
+        // Descontar stock ahora que hay disponibilidad (RPC)
+        for (const item of orderItems) {
+          const rpcRes = await (supabase as any).rpc('adjust_product_stock', { p_id_product: item.product_id, p_delta: -Number(item.quantity) })
+          const stockError = (rpcRes as any).error
+          if (stockError) console.error('Error descontando stock via RPC:', stockError)
         }
       }
     }

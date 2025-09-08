@@ -28,11 +28,13 @@
                 <span class="text-pink-600 font-bold">{{ formatCOP(discountedPrice(offer.product?.price, offer.discount_percent)) }}</span>
                 <span class="ml-auto inline-flex items-center text-xs px-2 py-0.5 rounded bg-pink-100 text-pink-700">-{{ offer.discount_percent }}%</span>
               </div>
-              <div class="pt-2">
-                <button @click="addToCart(offer)" class="w-full inline-flex items-center justify-center px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">
-                  <Icon name="heroicons:plus" class="w-5 h-5 mr-2" /> Agregar al carrito
+              <div class="pt-2 flex items-center gap-2">
+                <input v-model.number="quantities[offer.id_offer]" type="number" min="1" :max="offer.product?.stock_quantity || 1" class="w-20 px-2 py-2 border rounded" />
+                <button @click="addToCart(offer)" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">
+                  <Icon name="heroicons:plus" class="w-5 h-5 mr-2" /> Agregar
                 </button>
               </div>
+              <div v-if="offer.product?.stock_quantity <= 0" class="text-xs text-red-600 mt-1">No hay más disponibles</div>
             </div>
           </div>
         </div>
@@ -47,6 +49,9 @@ definePageMeta({ middleware: 'auth' })
 const loading = ref(true)
 const offers = ref([])
 const { formatCOP } = useCurrency()
+import { useCartStore } from '~/stores/cart'
+const cart = useCartStore()
+const quantities = reactive({})
 
 const discountedPrice = (price, percent) => {
   if (!price) return 0
@@ -68,8 +73,21 @@ const fetchOffers = async () => {
 }
 
 const addToCart = async (offer) => {
-  // Placeholder: aquí integrar lógica de carrito (Pinia/store) si existe
-  console.log('Agregar al carrito:', offer)
+  const p = offer?.product
+  if (!p) return
+  const qty = Math.max(1, Number(quantities[offer.id_offer] || 1))
+  if (p.stock_quantity !== undefined && qty > Number(p.stock_quantity)) {
+    alert('No hay más disponibles')
+    return
+  }
+  const ok = true
+  const priceNow = discountedPrice(p.price, offer.discount_percent)
+  cart.addItem({ product_id: p.id_product, name: p.name, sku: p.sku, price: priceNow, image_url: p.image_url || null }, qty)
+  try {
+    await $fetch('/api/reservations', { method: 'POST', body: { product_id: p.id_product, quantity: qty } })
+    const { $toast } = useNuxtApp()
+    $toast?.success('Agregado al carrito', `${qty} x ${p.name}`)
+  } catch (e) { console.error('No se pudo crear reserva', e) }
 }
 
 onMounted(fetchOffers)

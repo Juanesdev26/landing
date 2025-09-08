@@ -1,4 +1,5 @@
 import { serverSupabaseClient } from '#supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { requireAdmin, respondSuccess, respondError } from '~/server/utils/auth'
 
 type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
@@ -39,8 +40,17 @@ export default defineEventHandler(async (event) => {
 
   if (method === 'GET') {
     try {
+      // Solo admins y usar service role para evitar bloqueos por RLS en joins
+      await requireAdmin(event)
+      const config = useRuntimeConfig()
+      const adminClient = createClient(
+        config.public.supabaseUrl,
+        config.supabaseServiceKey,
+        { auth: { persistSession: false } }
+      ) as any
+
       // Obtener todos los pedidos con información relacionada
-      const { data: orders, error } = await supabase
+      const { data: orders, error } = await adminClient
         .from('orders')
         .select(`
           *,

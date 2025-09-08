@@ -204,73 +204,14 @@ export default defineEventHandler(async (event) => {
         console.error('Error obteniendo items para restaurar stock:', itemsError)
       } else if (orderItems) {
         for (const item of orderItems) {
-          const clientAny = supabase as any
-          const { error: stockError } = await clientAny
-            .from('products')
-            .update({ 
-              stock_quantity: clientAny.raw(`stock_quantity + ${item.quantity}`),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id_product', item.product_id)
-
-          if (stockError) {
-            console.error('Error restaurando stock:', stockError)
-          }
+          const rpcRes = await (supabase as any).rpc('adjust_product_stock', { p_id_product: item.product_id, p_delta: Number(item.quantity) })
+          const stockError = (rpcRes as any).error
+          if (stockError) console.error('Error restaurando stock via RPC:', stockError)
         }
       }
     }
 
-    // Si el pago se marca como pagado, verificar si se puede confirmar el pedido
-    if (newPaymentStatus === 'paid' && currentPaymentStatus === 'pending' && currentOrder.status === 'pending') {
-      // Verificar stock antes de confirmar automáticamente
-      const orderItemsRes = await supabase
-        .from('order_items')
-        .select('product_id, quantity')
-        .eq('order_id', id)
-      const itemsError = (orderItemsRes as any).error as any
-      const orderItems = (orderItemsRes as any).data as OrderItemRow[] | null
-
-      if (itemsError) {
-        console.error('Error obteniendo items para verificar stock:', itemsError)
-      } else if (orderItems) {
-        let canConfirm = true
-        
-        for (const item of orderItems) {
-          const productRes = await supabase
-            .from('products')
-            .select('stock_quantity, name')
-            .eq('id_product', item.product_id)
-            .single()
-          const productError = (productRes as any).error as any
-          const product = (productRes as any).data as { stock_quantity: number, name: string }
-
-          if (productError) {
-            console.error('Error verificando stock del producto:', productError)
-            canConfirm = false
-          } else if (product.stock_quantity < item.quantity) {
-            console.warn(`Stock insuficiente para ${product.name} al confirmar pedido automáticamente`)
-            canConfirm = false
-          }
-        }
-
-        // Si se puede confirmar, hacerlo automáticamente
-        if (canConfirm) {
-          const { error: confirmError } = await (supabase as any)
-            .from('orders')
-            .update({ 
-              status: 'confirmed',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id_order', id)
-
-          if (confirmError) {
-            console.error('Error confirmando pedido automáticamente:', confirmError)
-          } else {
-            console.log('Pedido confirmado automáticamente después del pago')
-          }
-        }
-      }
-    }
+    // No auto-confirmar al marcar como pagado; el admin debe confirmar y allí se descuenta el stock
 
     return {
       data: {

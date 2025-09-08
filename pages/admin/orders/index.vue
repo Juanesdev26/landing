@@ -24,6 +24,51 @@
       </div>
     </div>
 
+    <!-- Apartados / Reservas -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden mt-8">
+      <div class="p-4 border-b flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-900">Apartados recientes</h2>
+        <button @click="fetchReservations" class="px-3 py-2 border rounded">Refrescar</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expira</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="r in reservations" :key="r.id_reservation">
+              <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-900">{{ r.user?.email }}</div>
+                <div class="text-sm text-gray-500">{{ r.user?.first_name }} {{ r.user?.last_name }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-900">{{ r.product?.name }}</div>
+                <div class="text-sm text-gray-500">SKU: {{ r.product?.sku }}</div>
+              </td>
+              <td class="px-6 py-4 text-sm">{{ r.quantity }}</td>
+              <td class="px-6 py-4 text-sm">{{ formatDate(r.expires_at) }}</td>
+              <td class="px-6 py-4">
+                <span :class="r.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : r.status === 'converted' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" class="px-2 py-1 rounded text-xs">{{ r.status }}</span>
+              </td>
+              <td class="px-6 py-4 text-sm">
+                <div class="flex gap-2">
+                  <button v-if="r.status==='pending'" @click="approveReservation(r)" class="px-3 py-2 bg-emerald-600 text-white rounded">Aprobar pedido</button>
+                  <button v-if="r.status==='pending'" @click="cancelReservation(r)" class="px-3 py-2 border rounded">Cancelar</button>
+                  <button v-if="r.status!=='pending'" @click="deleteReservation(r)" class="px-3 py-2 border rounded">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
     <!-- Resumen de pedidos -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
       <div class="bg-white p-6 rounded-lg shadow-sm">
@@ -161,6 +206,9 @@
             Limpiar Filtros
           </button>
         </div>
+        <div class="mt-4 text-sm text-gray-600">
+          Los pedidos pueden provenir de un apartado (reserva). Verifica pago y confirma para descontar stock.
+        </div>
       </div>
     </div>
 
@@ -184,6 +232,9 @@
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Pago
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Origen
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Fecha
@@ -217,14 +268,18 @@
                 <div class="text-sm text-gray-500">{{ order.order_items?.length || 0 }} productos</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  :class="[
-                    'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                    getStatusClass(order.status)
-                  ]"
-                >
-                  {{ getStatusText(order.status) }}
-                </span>
+                <div class="flex items-center gap-2">
+                  <span
+                    :class="[
+                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                      getStatusClass(order.status)
+                    ]"
+                  >
+                    {{ getStatusText(order.status) }}
+                  </span>
+                  <span v-if="order.status==='pending' && order.payment_status!=='paid'" class="text-xs text-yellow-700">(pendiente de pago)</span>
+                  <span v-if="order.status==='pending' && order.payment_status==='paid'" class="text-xs text-emerald-700">(pagado)</span>
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span
@@ -237,37 +292,30 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <span class="uppercase">{{ order.order_source }}</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ formatDate(order.created_at) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div class="flex space-x-2">
                   <button
-                    @click="viewOrder(order)"
-                    class="text-blue-600 hover:text-blue-900"
-                    title="Ver pedido"
+                    v-if="order.status === 'pending'"
+                    @click="approveOrder(order)"
+                    class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+                    title="Aprobar pedido"
                   >
-                    <Icon name="heroicons:eye" class="w-5 h-5" />
+                    <Icon name="heroicons:check-circle" class="w-5 h-5 mr-1" />
+                    Aprobar pedido
                   </button>
                   <button
-                    @click="openOrderModal(order)"
-                    class="text-green-600 hover:text-green-900"
-                    title="Editar pedido"
-                  >
-                    <Icon name="heroicons:pencil" class="w-5 h-5" />
-                  </button>
-                  <button
-                    @click="updateStatus(order)"
-                    class="text-orange-600 hover:text-orange-900"
-                    title="Cambiar estado"
-                  >
-                    <Icon name="heroicons:arrow-path" class="w-5 h-5" />
-                  </button>
-                  <button
+                    v-if="order.status !== 'cancelled'"
                     @click="confirmDelete(order)"
-                    class="text-red-600 hover:text-red-900"
+                    class="inline-flex items-center px-3 py-1.5 rounded border hover:bg-gray-50"
                     title="Cancelar pedido"
                   >
-                    <Icon name="heroicons:trash" class="w-5 h-5" />
+                    <Icon name="heroicons:trash" class="w-5 h-5 mr-1" />
+                    Cancelar
                   </button>
                 </div>
               </td>
@@ -353,6 +401,14 @@
       @update="updateOrderStatus"
     />
 
+    <!-- Modal para actualizar pago -->
+    <PaymentUpdateModal
+      v-if="showPaymentModal && selectedOrder"
+      :order-id="selectedOrder.id_order"
+      @close="closePaymentModal"
+      @saved="onPaymentSaved"
+    />
+
     <!-- Modal de confirmación para eliminar -->
     <ConfirmModal
       v-if="showConfirmModal"
@@ -371,6 +427,7 @@ definePageMeta({
 
 // Estado reactivo
 const orders = ref([])
+const reservations = ref([])
 const loading = ref(false)
 const searchQuery = ref('')
 const selectedStatus = ref('')
@@ -381,6 +438,7 @@ const currentPage = ref(1)
 const itemsPerPage = ref(10)
 const showModal = ref(false)
 const showStatusModal = ref(false)
+const showPaymentModal = ref(false)
 const showConfirmModal = ref(false)
 const selectedOrder = ref(null)
 const orderToDelete = ref(null)
@@ -495,6 +553,22 @@ const updateStatus = (order) => {
   showStatusModal.value = true
 }
 
+const openPaymentModal = (order) => {
+  selectedOrder.value = order
+  showPaymentModal.value = true
+}
+
+const closePaymentModal = () => {
+  showPaymentModal.value = false
+  selectedOrder.value = null
+}
+
+const { $toast } = useNuxtApp()
+const onPaymentSaved = async () => {
+  await fetchOrders()
+  $toast?.success('Pago actualizado')
+}
+
 const closeStatusModal = () => {
   showStatusModal.value = false
   selectedOrder.value = null
@@ -533,6 +607,16 @@ const saveOrder = async (orderData) => {
     console.error('Error saving order:', error)
   }
 }
+const fetchReservations = async () => {
+  try {
+    const { data } = await $fetch('/api/reservations')
+    if (data.success) {
+      reservations.value = data.data
+    }
+  } catch (error) {
+    console.error('Error fetching reservations:', error)
+  }
+}
 
 const updateOrderStatus = async (statusData) => {
   try {
@@ -541,14 +625,51 @@ const updateOrderStatus = async (statusData) => {
       body: statusData
     })
     if (data.success) {
-      console.log('Estado del pedido actualizado exitosamente')
+      $toast?.success('Estado actualizado', `Nuevo estado: ${statusData.status}`)
       await fetchOrders()
       closeStatusModal()
     } else {
-      console.error('Error actualizando estado:', data.error)
+      $toast?.error('Error', data.error)
     }
   } catch (error) {
-    console.error('Error updating status:', error)
+    $toast?.error('Error', 'No fue posible actualizar el estado')
+  }
+}
+
+const markOrderPaid = async (order) => {
+  try {
+    const { data } = await $fetch(`/api/orders/${order.id_order}/update-payment`, { method: 'PATCH', body: { payment_status: 'paid' } })
+    if (data.success) {
+      $toast?.success('Pago marcado como pagado')
+      await fetchOrders()
+    } else {
+      $toast?.error('Error', data.error)
+    }
+  } catch (error) {
+    $toast?.error('Error', 'No fue posible marcar el pago')
+  }
+}
+
+const approveOrder = async (order) => {
+  try {
+    // 1) Si pago no es paid, marcarlo pagado
+    if (order.payment_status !== 'paid') {
+      const pay = await $fetch(`/api/orders/${order.id_order}/update-payment`, { method: 'PATCH', body: { payment_status: 'paid' } })
+      if (!pay?.data?.success) {
+        $toast?.error('Error', pay?.data?.error || 'No se pudo marcar pago')
+        return
+      }
+    }
+    // 2) Aprobar: confirmed (descuenta stock en backend)
+    const res = await $fetch(`/api/orders/${order.id_order}/update-status`, { method: 'PATCH', body: { status: 'confirmed' } })
+    if (res?.data?.success) {
+      $toast?.success('Pedido aprobado')
+      await fetchOrders()
+    } else {
+      $toast?.error('Error', res?.data?.error || 'No fue posible aprobar el pedido')
+    }
+  } catch (error) {
+    $toast?.error('Error', 'No fue posible aprobar el pedido')
   }
 }
 
@@ -565,15 +686,15 @@ const deleteOrder = async () => {
       method: 'DELETE'
     })
     if (data.success) {
-      console.log('Pedido cancelado exitosamente')
+      $toast?.success('Pedido cancelado')
       await fetchOrders()
       showConfirmModal.value = false
       orderToDelete.value = null
     } else {
-      console.error('Error cancelando pedido:', data.error)
+      $toast?.error('Error', data.error)
     }
   } catch (error) {
-    console.error('Error deleting order:', error)
+    $toast?.error('Error', 'No fue posible cancelar el pedido')
   }
 }
 
@@ -620,7 +741,7 @@ const getStatusClass = (status) => {
 const getStatusText = (status) => {
   const texts = {
     pending: 'Pendiente',
-    confirmed: 'Confirmado',
+    confirmed: 'Aprobado',
     shipped: 'Enviado',
     delivered: 'Entregado',
     cancelled: 'Cancelado'
@@ -657,6 +778,68 @@ const formatDate = (dateString) => {
     month: 'short',
     day: 'numeric'
   })
+}
+const createOrderFromReservation = async (r) => {
+  const ok = confirm('Crear pedido desde este apartado?')
+  if (!ok) return
+  try {
+    const { data } = await $fetch(`/api/reservations/${r.id_reservation}/create-order`, { method: 'POST' })
+    if (data.success) {
+      await fetchOrders()
+      await fetchReservations()
+      alert('Pedido creado desde apartado')
+    } else {
+      alert(data.error || 'Error creando pedido desde apartado')
+    }
+  } catch (error) {
+    console.error('Error creating order from reservation:', error)
+    alert('Error creando pedido')
+  }
+}
+const cancelReservation = async (r) => {
+  const ok = confirm('Cancelar este apartado?')
+  if (!ok) return
+  try {
+    const { data } = await $fetch(`/api/reservations/${r.id_reservation}/cancel`, { method: 'PATCH' })
+    if (data.success) {
+      await fetchReservations()
+    } else {
+      alert(data.error || 'Error cancelando apartado')
+    }
+  } catch (error) {
+    console.error('Error cancelando apartado:', error)
+  }
+}
+const approveReservation = async (r) => {
+  const ok = confirm('Aprobar pedido (pagado y aprobado) y descontar stock?')
+  if (!ok) return
+  try {
+    const { data } = await $fetch(`/api/reservations/${r.id_reservation}/approve`, { method: 'POST' })
+    if (data.success) {
+      $toast?.success('Pedido aprobado')
+      await fetchOrders()
+      await fetchReservations()
+    } else {
+      $toast?.error('Error', data.error)
+    }
+  } catch (error) {
+    $toast?.error('Error', 'No fue posible aprobar el pedido')
+  }
+}
+const deleteReservation = async (r) => {
+  const ok = confirm('Eliminar este registro de apartado?')
+  if (!ok) return
+  try {
+    const { data } = await $fetch(`/api/reservations/${r.id_reservation}`, { method: 'DELETE' })
+    if (data.success) {
+      $toast?.success('Registro eliminado')
+      await fetchReservations()
+    } else {
+      $toast?.error('Error', data.error)
+    }
+  } catch (error) {
+    $toast?.error('Error', 'No fue posible eliminar el registro')
+  }
 }
 
 // Verificación de autenticación
@@ -705,5 +888,6 @@ const checkAuthentication = async () => {
 onMounted(async () => {
   await checkAuthentication()
   await fetchOrders()
+  await fetchReservations()
 })
 </script>

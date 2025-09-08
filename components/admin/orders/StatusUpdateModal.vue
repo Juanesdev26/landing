@@ -126,10 +126,20 @@ const handleSubmit = async () => {
     return
   }
 
+  // Validar confirmación requiere pago "paid"
+  if (form.value.status === 'confirmed' && props.order?.payment_status !== 'paid') {
+    alert('No puedes confirmar un pedido con pago pendiente. Marca el pago como "Pagado" primero.')
+    return
+  }
+
+  // Confirmación adicional al confirmar
+  if (form.value.status === 'confirmed') {
+    const ok = confirm('¿Confirmar el pedido? Se descontará el stock de los productos.')
+    if (!ok) return
+  }
+
   loading.value = true
-  
   try {
-    // Emitir evento con los datos del formulario
     emit('update', { ...form.value })
   } catch (error) {
     console.error('Error en el formulario:', error)
@@ -152,7 +162,7 @@ const getStatusClass = (status) => {
 const getStatusText = (status) => {
   const texts = {
     pending: 'Pendiente',
-    confirmed: 'Confirmado',
+    confirmed: 'Aprobado',
     shipped: 'Enviado',
     delivered: 'Entregado',
     cancelled: 'Cancelado'

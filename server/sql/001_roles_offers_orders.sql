@@ -74,4 +74,46 @@ CREATE TRIGGER trg_offers_updated_at
 BEFORE UPDATE ON public.offers
 FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
 
+-- 6) Reservations (apartados) - bloquean stock virtualmente hasta confirmación o expiración
+CREATE TABLE IF NOT EXISTS public.reservations (
+  id_reservation uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  product_id uuid NOT NULL REFERENCES public.products(id_product) ON DELETE CASCADE,
+  quantity integer NOT NULL CHECK (quantity > 0),
+  status text NOT NULL DEFAULT 'pending' CHECK (status = ANY(ARRAY['pending','cancelled','converted'])),
+  notes text,
+  expires_at timestamptz,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+DROP TRIGGER IF EXISTS trg_reservations_updated_at ON public.reservations;
+CREATE TRIGGER trg_reservations_updated_at
+BEFORE UPDATE ON public.reservations
+FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
+
+-- 7) RPC: adjust_product_stock(product_id, delta)
+-- Safely adjusts product stock by delta (can be negative). Returns updated row.
+-- Usage example from server: supabase.rpc('adjust_product_stock', { p_id_product: '<uuid>', p_delta: -2 })
+CREATE OR REPLACE FUNCTION public.adjust_product_stock(p_id_product uuid, p_delta integer)
+RETURNS TABLE (
+  id_product uuid,
+  stock_quantity integer
+) AS $$
+BEGIN
+  UPDATE public.products
+  SET stock_quantity = GREATEST(0, COALESCE(stock_quantity, 0) + p_delta),
+      updated_at = now()
+  WHERE id_product = p_id_product
+  RETURNING products.id_product, products.stock_quantity
+  INTO id_product, stock_quantity;
+
+  RETURN NEXT;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DO $$ BEGIN
+  GRANT EXECUTE ON FUNCTION public.adjust_product_stock(uuid, integer) TO authenticated;
+EXCEPTION WHEN others THEN NULL; END $$;
 

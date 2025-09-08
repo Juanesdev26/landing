@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
       .from('offers')
       .select(`
         *,
-        product:products(id_product, name, sku, price, image_url)
+        product:products(id_product, name, sku, price, image_url, stock_quantity)
       `)
       .eq('is_active', true)
       .or(`valid_from.is.null,valid_from.lte.${nowIso}`)
