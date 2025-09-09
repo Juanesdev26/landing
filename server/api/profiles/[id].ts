@@ -1,4 +1,5 @@
 import { serverSupabaseClient } from '#supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { requireAdmin, respondSuccess, respondError } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -39,8 +40,8 @@ export default defineEventHandler(async (event) => {
 
       // Procesar el perfil para incluir información adicional
       const processedProfile = {
-        ...profile,
-        full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || null
+        ...(profile as any),
+        full_name: `${(profile as any).first_name || ''} ${(profile as any).last_name || ''}`.trim() || null
       }
 
       return respondSuccess(processedProfile)
@@ -97,9 +98,9 @@ export default defineEventHandler(async (event) => {
         updated_at: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
-        .update(updatedProfile)
+        .update(updatedProfile as any)
         .eq('id', id)
         .select()
         .single()
@@ -124,52 +125,77 @@ export default defineEventHandler(async (event) => {
   if (method === 'DELETE') {
     try {
       await requireAdmin(event)
-      // Verificar si el usuario tiene pedidos asociados
-      const { data: orders, error: ordersError } = await supabase
+      // Usar service role para operaciones administrativas y evitar bloqueos por RLS / FKs
+      const config = useRuntimeConfig()
+      const adminClient = createClient(
+        config.public.supabaseUrl,
+        config.supabaseServiceKey,
+        { auth: { persistSession: false } }
+      ) as any
+
+      // 0) Intentar eliminar auth user primero (si no existe, continuar)
+      const delAuth = await adminClient.auth.admin.deleteUser(id)
+      if ((delAuth as any).error && (delAuth as any).error?.message && !(delAuth as any).error?.message?.includes('not found')) {
+        const err = (delAuth as any).error
+        console.warn('No se pudo eliminar auth user en primer intento, continuando:', err)
+      }
+
+      // 1) Desasociar customers del auth user (FK customers.user_id -> auth.users.id)
+      const clearCust = await adminClient
+        .from('customers')
+        .update({ user_id: null, updated_at: new Date().toISOString() })
+        .eq('user_id', id)
+      if (clearCust.error) {
+        console.error('Error desasociando cliente del usuario:', clearCust.error)
+        return respondError('Error desasociando cliente del usuario', clearCust.error.message)
+      }
+
+      // 2) Eliminar reservas del usuario
+      const delResv = await adminClient
+        .from('reservations')
+        .delete()
+        .eq('user_id', id)
+      if (delResv.error) {
+        console.error('Error eliminando reservas del usuario:', delResv.error)
+        return respondError('Error eliminando reservas del usuario', delResv.error.message)
+      }
+
+      // 2.1) Eliminar ofertas asignadas al usuario (si no hay CASCADE)
+      const delOffers = await adminClient
+        .from('user_offers')
+        .delete()
+        .eq('user_id', id)
+      if (delOffers.error) {
+        console.error('Error eliminando ofertas del usuario:', delOffers.error)
+        return respondError('Error eliminando ofertas del usuario', delOffers.error.message)
+      }
+
+      // 2.2) Desasociar órdenes asignadas a este usuario (assigned_user_id)
+      const clearAssigned = await adminClient
         .from('orders')
-        .select('id_order')
-        .eq('customer_id', id)
-        .limit(1)
-
-      if (ordersError) {
-        console.error('Error verificando pedidos del usuario:', ordersError)
-        return {
-          success: false,
-          error: 'Error verificando pedidos del usuario'
-        }
+        .update({ assigned_user_id: null, updated_at: new Date().toISOString() })
+        .eq('assigned_user_id', id)
+      if (clearAssigned.error) {
+        console.error('Error desasociando órdenes asignadas:', clearAssigned.error)
+        return respondError('Error desasociando órdenes asignadas', clearAssigned.error.message)
       }
 
-      if (orders && orders.length > 0) {
-        return {
-          success: false,
-          error: 'No se puede eliminar el usuario porque tiene pedidos asociados'
-        }
-      }
-
-      // Eliminar usuario de Supabase Auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(id)
-      if (authError) {
-        console.error('Error eliminando usuario de Auth:', authError)
-        return {
-          success: false,
-          error: 'Error eliminando usuario del sistema de autenticación',
-          details: authError.message
-        }
-      }
-
-      // Eliminar perfil
-      const { error } = await supabase
+      // 3) Eliminar perfil
+      const delProf = await adminClient
         .from('profiles')
         .delete()
         .eq('id', id)
+      if (delProf.error) {
+        console.error('Error eliminando perfil:', delProf.error)
+        return respondError('Error eliminando perfil', delProf.error.message)
+      }
 
-      if (error) {
-        console.error('Error eliminando perfil:', error)
-        return {
-          success: false,
-          error: 'Error eliminando perfil',
-          details: error.message
-        }
+      // 4) Eliminar auth user (segundo intento definitivo)
+      const authDel = await adminClient.auth.admin.deleteUser(id)
+      if ((authDel as any).error && (authDel as any).error?.message && !(authDel as any).error?.message?.includes('not found')) {
+        const err = (authDel as any).error
+        console.error('Error eliminando usuario de Auth:', err)
+        return respondError('Error eliminando usuario del sistema de autenticación', err.message)
       }
 
       return respondSuccess(null, 'Usuario eliminado exitosamente')

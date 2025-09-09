@@ -89,7 +89,7 @@
               class="group relative w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-blue-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               <span v-if="loading" class="flex items-center justify-center">
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns=" http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -101,6 +101,19 @@
                 </svg>
                 Iniciar Sesión
               </span>
+            </button>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-4 my-4">
+              <div class="h-px flex-1 bg-white/20"></div>
+              <span class="text-xs text-white/60">o</span>
+              <div class="h-px flex-1 bg-white/20"></div>
+            </div>
+
+            <!-- Google Sign-In -->
+            <button type="button" @click="loginWithGoogle" :disabled="loading" class="w-full bg-white text-gray-800 py-3 px-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 flex items-center justify-center gap-3">
+              <img alt="Google" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" />
+              Continuar con Google
             </button>
           </form>
 
@@ -136,6 +149,7 @@ const email = ref('')
 const password = ref('')
 
 const { login } = useAuth()
+const supabase = useSupabaseClient()
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
@@ -171,6 +185,19 @@ const handleLogin = async () => {
   } catch (err) {
     console.error('Error de login:', err)
     error.value = 'Error al iniciar sesión. Verifica tu conexión.'
+  } finally {
+    loading.value = false
+  }
+}
+
+const loginWithGoogle = async () => {
+  try {
+    loading.value = true
+    const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
+    if (error) throw error
+  } catch (e) {
+    console.error('Google sign-in error', e)
+    error.value = 'No se pudo iniciar sesión con Google'
   } finally {
     loading.value = false
   }

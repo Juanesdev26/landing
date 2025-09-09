@@ -23,6 +23,7 @@ export default defineEventHandler(async (event) => {
           user:profiles(id, email, first_name, last_name),
           product:products(id_product, name, sku, image_url)
         `)
+        .eq('status', 'pending')
         .order('created_at', { ascending: false })
       if (error) return respondError('Error obteniendo reservas', error.message)
       return respondSuccess(data)

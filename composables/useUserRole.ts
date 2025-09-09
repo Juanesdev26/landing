@@ -9,25 +9,24 @@ export const useUserRole = () => {
   const { user } = useAuth()
   
   // Computed properties para roles
-  const userRole = computed(() => user.value?.role || 'customer')
+  const userRole = computed(() => user.value?.role || 'user')
   const isAdmin = computed(() => userRole.value === 'admin')
-  const isManager = computed(() => userRole.value === 'manager')
-  const isCustomer = computed(() => userRole.value === 'customer')
+  const isCustomer = computed(() => userRole.value === 'user')
   const isAuthenticated = computed(() => !!user.value)
   
   // Permisos específicos
-  const canEdit = computed(() => isAdmin.value || isManager.value)
+  const canEdit = computed(() => isAdmin.value)
   const canDelete = computed(() => isAdmin.value)
-  const canCreate = computed(() => isAdmin.value || isManager.value)
+  const canCreate = computed(() => isAdmin.value)
   const canView = computed(() => isAuthenticated.value)
   
   // Permisos específicos para e-commerce
-  const canManageProducts = computed(() => isAdmin.value || isManager.value)
-  const canManageOrders = computed(() => isAdmin.value || isManager.value)
+  const canManageProducts = computed(() => isAdmin.value)
+  const canManageOrders = computed(() => isAdmin.value)
   const canManageUsers = computed(() => isAdmin.value)
-  const canViewAnalytics = computed(() => isAdmin.value || isManager.value)
-  const canManageCategories = computed(() => isAdmin.value || isManager.value)
-  const canManageInventory = computed(() => isAdmin.value || isManager.value)
+  const canViewAnalytics = computed(() => isAdmin.value)
+  const canManageCategories = computed(() => isAdmin.value)
+  const canManageInventory = computed(() => isAdmin.value)
   const canProcessRefunds = computed(() => isAdmin.value)
   const canViewReports = computed(() => isAdmin.value)
   
@@ -89,7 +88,6 @@ export const useUserRole = () => {
   // Función para obtener el nivel de acceso
   const getAccessLevel = (): number => {
     if (isAdmin.value) return 3
-    if (isManager.value) return 2
     if (isCustomer.value) return 1
     return 0
   }
@@ -134,17 +132,6 @@ export const useUserRole = () => {
       ]
     }
     
-    if (isManager.value) {
-      return [
-        { label: 'Dashboard', icon: 'i-heroicons-home', to: '/admin' },
-        { label: 'Productos', icon: 'i-heroicons-shopping-bag', to: '/admin/products' },
-        { label: 'Órdenes', icon: 'i-heroicons-shopping-cart', to: '/admin/orders' },
-        { label: 'Categorías', icon: 'i-heroicons-tag', to: '/admin/categories' },
-        { label: 'Inventario', icon: 'i-heroicons-cube', to: '/admin/inventory' },
-        { label: 'Analytics', icon: 'i-heroicons-chart-bar', to: '/admin/analytics' },
-      ]
-    }
-    
     return [
       { label: 'Inicio', icon: 'i-heroicons-home', to: '/' },
       { label: 'Productos', icon: 'i-heroicons-shopping-bag', to: '/shop' },
@@ -159,7 +146,6 @@ export const useUserRole = () => {
     user,
     userRole,
     isAdmin,
-    isManager,
     isCustomer,
     isAuthenticated,
     

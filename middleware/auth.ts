@@ -46,20 +46,15 @@ export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => 
       }
       
       // Rutas por rol
-      const role = (profile as { role?: 'admin' | 'manager' | 'customer' | 'user' } | null)?.role
+      const role = (profile as { role?: 'admin' | 'user' } | null)?.role
 
       // Reglas de acceso por prefijo
       const path = to.path
       const isAdminArea = path.startsWith('/admin')
       const isUserPortal = path.startsWith('/user')
 
-      if (isAdminArea) {
-        if (role !== 'admin') return navigateTo('/unauthorized')
-      }
-
-      if (isUserPortal) {
-        if (role !== 'user') return navigateTo('/unauthorized')
-      }
+      if (isAdminArea && role !== 'admin') return navigateTo('/unauthorized')
+      if (isUserPortal && role !== 'user') return navigateTo('/unauthorized')
       
       // Para el resto de rutas protegidas: cualquier rol autenticado
       

@@ -42,6 +42,12 @@ export default defineNuxtPlugin(async () => {
     
     if (event === 'SIGNED_IN' && session) {
       console.log('✅ Usuario inició sesión:', session.user.email)
+      // Upsert/upgrade profile to role 'user' after third-party login
+      try {
+        await $fetch('/api/auth/upsert-profile', { method: 'POST' })
+      } catch (e) {
+        console.warn('No se pudo actualizar perfil tras login', e)
+      }
       await checkAuth()
     } else if (event === 'SIGNED_OUT') {
       console.log('🚪 Usuario cerró sesión')

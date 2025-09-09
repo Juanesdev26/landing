@@ -1,5 +1,5 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
-import { requireAuth, respondError, respondSuccess } from '~/server/utils/auth'
+import { respondError, respondSuccess } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const method = getMethod(event)
@@ -7,9 +7,8 @@ export default defineEventHandler(async (event) => {
   if (method !== 'GET') return respondError('Método no permitido')
 
   try {
-    await requireAuth(event)
     const user = await serverSupabaseUser(event)
-    if (!user) return respondError('No autenticado')
+    if (!user) return respondSuccess([])
 
     const { data, error } = await supabase
       .from('reservations')

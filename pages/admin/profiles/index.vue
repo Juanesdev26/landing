@@ -319,12 +319,11 @@
     />
 
     <!-- Modal de confirmación para eliminar -->
-    <ConfirmModal
+    <UserDeleteModal
       v-if="showConfirmModal"
-      title="Eliminar Usuario"
-      message="¿Estás seguro de que quieres eliminar este usuario? Esta acción no se puede deshacer."
+      :user="userToDelete"
       @confirm="deleteUser"
-      @cancel="showConfirmModal = false"
+      @close="showConfirmModal = false"
     />
   </div>
 </template>
@@ -333,6 +332,7 @@
 definePageMeta({
   layout: 'admin'
 })
+const UserDeleteModal = resolveComponent('UserDeleteModal')
 
 // Estado reactivo
 const users = ref([])
@@ -496,18 +496,15 @@ const confirmDelete = (user) => {
 
 const deleteUser = async () => {
   if (!userToDelete.value) return
-  
   try {
-    const { data } = await $fetch(`/api/profiles/${userToDelete.value.id}`, {
-      method: 'DELETE'
-    })
-    if (data.success) {
+    const res = await $fetch(`/api/profiles/${userToDelete.value.id}`, { method: 'DELETE' })
+    if (res?.data?.success) {
       console.log('Usuario eliminado exitosamente')
       await fetchUsers()
       showConfirmModal.value = false
       userToDelete.value = null
     } else {
-      console.error('Error eliminando usuario:', data.error)
+      console.error('Error eliminando usuario:', res?.data?.error || 'Respuesta inválida')
     }
   } catch (error) {
     console.error('Error deleting user:', error)

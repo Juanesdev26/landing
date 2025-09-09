@@ -26,6 +26,14 @@ export const useAuth = () => {
         throw new Error('Credenciales incorrectas')
       }
 
+      // Asegurar que exista perfil y rol 'user' (mantener admin si ya lo es)
+      try {
+        await $fetch('/api/auth/upsert-profile', { method: 'POST' })
+      } catch (_e) {
+        // no bloquear el login por fallo en upsert
+        console.warn('upsert-profile falló tras login')
+      }
+
       // Obtener perfil del usuario desde la tabla profiles
       const { data: profile, error: profileError } = await supabase
         .from('profiles')

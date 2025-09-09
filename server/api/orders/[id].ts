@@ -324,9 +324,9 @@ export default defineEventHandler(async (event) => {
         return respondError('Pedido no encontrado')
       }
 
-      // Solo permitir eliminación de pedidos pendientes
-      if ((existingOrder as any).status !== 'pending') {
-        return respondError('Solo se pueden eliminar pedidos pendientes')
+      // Permitir eliminación de pedidos pendientes o confirmados
+      if (!['pending', 'confirmed'].includes((existingOrder as any).status)) {
+        return respondError('Solo se pueden eliminar pedidos en estado pending o confirmed')
       }
 
       // Obtener items del pedido para restaurar stock
@@ -339,20 +339,12 @@ export default defineEventHandler(async (event) => {
         console.error('Error obteniendo items del pedido:', itemsError)
       }
 
-      // Restaurar stock de productos
+      // Restaurar stock de productos (RPC)
       if (orderItems) {
         for (const item of orderItems as any[]) {
-          const { error: stockError } = await (supabase as any)
-            .from('products')
-            .update({ 
-              stock_quantity: (supabase as any).raw(`stock_quantity + ${item.quantity}`),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id_product', item.product_id)
-
-          if (stockError) {
-            console.error('Error restaurando stock:', stockError)
-          }
+          const rpcRes = await (supabase as any).rpc('adjust_product_stock', { p_id_product: item.product_id, p_delta: Number(item.quantity) })
+          const stockError = (rpcRes as any).error
+          if (stockError) console.error('Error restaurando stock via RPC:', stockError)
         }
       }
 

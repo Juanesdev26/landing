@@ -212,7 +212,7 @@
       </div>
     </div>
 
-    <!-- Tabla de pedidos -->
+    <!-- Tabla de pedidos (combinada con reservas) -->
     <div class="bg-white rounded-lg shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -245,7 +245,7 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="order in filteredOrders" :key="order.id_order" class="hover:bg-gray-50">
+            <tr v-for="row in filteredOrders" :key="row.id_order" class="hover:bg-gray-50">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <div class="flex-shrink-0 h-10 w-10">
@@ -254,54 +254,54 @@
                     </div>
                   </div>
                   <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">#{{ order.id_order.slice(0, 8) }}</div>
-                    <div class="text-sm text-gray-500">{{ order.tracking_number || 'Sin tracking' }}</div>
+                    <div class="text-sm font-medium text-gray-900">#{{ (row.id_order || '').slice(0, 8) }}</div>
+                    <div class="text-sm text-gray-500">{{ row.tracking_number || (row._isReservation ? 'Reserva' : 'Sin tracking') }}</div>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{ order.customer?.first_name }} {{ order.customer?.last_name }}</div>
-                <div class="text-sm text-gray-500">{{ order.customer?.email }}</div>
+                <div class="text-sm font-medium text-gray-900">{{ row.customer?.first_name }} {{ row.customer?.last_name }}</div>
+                <div class="text-sm text-gray-500">{{ row.customer?.email }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{ formatCOP(order.total_amount) }}</div>
-                <div class="text-sm text-gray-500">{{ order.order_items?.length || 0 }} productos</div>
+                <div class="text-sm font-medium text-gray-900">{{ formatCOP(row.total_amount) }}</div>
+                <div class="text-sm text-gray-500">{{ row.order_items?.length || 0 }} productos</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center gap-2">
                   <span
                     :class="[
                       'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                      getStatusClass(order.status)
+                      getStatusClass(row.status)
                     ]"
                   >
-                    {{ getStatusText(order.status) }}
+                    {{ getStatusText(row.status) }}
                   </span>
-                  <span v-if="order.status==='pending' && order.payment_status!=='paid'" class="text-xs text-yellow-700">(pendiente de pago)</span>
-                  <span v-if="order.status==='pending' && order.payment_status==='paid'" class="text-xs text-emerald-700">(pagado)</span>
+                  <span v-if="row.status==='pending' && row.payment_status!=='paid' && !row._isReservation" class="text-xs text-yellow-700">(pendiente de pago)</span>
+                  <span v-if="row.status==='pending' && row.payment_status==='paid' && !row._isReservation" class="text-xs text-emerald-700">(pagado)</span>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span
                   :class="[
                     'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                    getPaymentStatusClass(order.payment_status)
+                    getPaymentStatusClass(row.payment_status)
                   ]"
                 >
-                  {{ getPaymentStatusText(order.payment_status) }}
+                  {{ getPaymentStatusText(row.payment_status) }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <span class="uppercase">{{ order.order_source }}</span>
+                <span class="uppercase">{{ row._isReservation ? 'RESERVA' : (row.order_source || '') }}</span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatDate(order.created_at) }}
+                {{ formatDate(row.created_at) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div class="flex space-x-2">
                   <button
-                    v-if="order.status === 'pending'"
-                    @click="approveOrder(order)"
+                    v-if="row._isReservation && row.status === 'pending'"
+                    @click="approveReservation(row._rawReservation)"
                     class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
                     title="Aprobar pedido"
                   >
@@ -309,8 +309,26 @@
                     Aprobar pedido
                   </button>
                   <button
-                    v-if="order.status !== 'cancelled'"
-                    @click="confirmDelete(order)"
+                    v-if="row._isReservation && row.status === 'pending'"
+                    @click="cancelReservation(row._rawReservation)"
+                    class="inline-flex items-center px-3 py-1.5 rounded border hover:bg-gray-50"
+                    title="Cancelar"
+                  >
+                    <Icon name="heroicons:trash" class="w-5 h-5 mr-1" />
+                    Cancelar
+                  </button>
+                  <button
+                    v-if="!row._isReservation && row.status === 'pending'"
+                    @click="approveOrder(row)"
+                    class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+                    title="Aprobar pedido"
+                  >
+                    <Icon name="heroicons:check-circle" class="w-5 h-5 mr-1" />
+                    Aprobar pedido
+                  </button>
+                  <button
+                    v-if="!row._isReservation && row.status !== 'cancelled'"
+                    @click="confirmDelete(row)"
                     class="inline-flex items-center px-3 py-1.5 rounded border hover:bg-gray-50"
                     title="Cancelar pedido"
                   >
@@ -445,7 +463,22 @@ const orderToDelete = ref(null)
 
 // Computed properties
 const filteredOrders = computed(() => {
-  let filtered = orders.value
+  // Fusionar reservas pendientes con pedidos
+  const reservationRows = (reservations.value || []).map(r => ({
+    id_order: r.id_reservation,
+    tracking_number: null,
+    customer: r.user ? { first_name: r.user.first_name, last_name: r.user.last_name, email: r.user.email } : null,
+    total_amount: r.product?.price ? Number(r.product.price) * Number(r.quantity || 1) : 0,
+    order_items: [{ quantity: r.quantity, unit_price: r.product?.price || 0, total_price: (r.product?.price || 0) * (r.quantity || 1) }],
+    status: r.status,
+    payment_status: 'pending',
+    order_source: 'reservation',
+    created_at: r.created_at,
+    _isReservation: true,
+    _rawReservation: r
+  }))
+
+  let filtered = [...reservationRows, ...(orders.value || [])]
 
   // Filtro por búsqueda
   if (searchQuery.value) {
@@ -479,7 +512,11 @@ const filteredOrders = computed(() => {
 
   // Filtro por origen
   if (selectedSource.value) {
-    filtered = filtered.filter(order => order.order_source === selectedSource.value)
+    if (selectedSource.value === 'reservation') {
+      filtered = filtered.filter(order => order._isReservation)
+    } else {
+      filtered = filtered.filter(order => order.order_source === selectedSource.value)
+    }
   }
 
   return filtered

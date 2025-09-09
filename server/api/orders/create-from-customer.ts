@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
       .eq('id', authUser.id)
       .single()
     if (profileError || !profile) return respondError('Perfil no encontrado')
-    if ((profile as any).role !== 'customer') return respondError('Solo clientes pueden crear aquí')
+    if (!['customer', 'user'].includes((profile as any).role)) return respondError('Solo clientes o usuarios pueden crear aquí')
     if ((profile as any).is_active === false) return respondError('Usuario inactivo')
 
     // Verificar cliente

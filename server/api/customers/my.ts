@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     // Si no existe, crear a partir del perfil
     const { data: profile } = await supabase
       .from('profiles')
-      .select('first_name, last_name, email, phone, address, city, state, postal_code, country')
+      .select('first_name, last_name, email, phone, address, city, state, postal_code, country, role')
       .eq('id', authUser.id)
       .single()
 
@@ -54,6 +54,7 @@ export default defineEventHandler(async (event) => {
     return respondError('Error interno del servidor')
   }
 })
+
 
 
 

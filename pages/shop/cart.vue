@@ -88,6 +88,20 @@
                 Continuar Comprando
               </NuxtLink>
             </div>
+            <div class="mt-8">
+              <h3 class="text-sm font-semibold text-gray-900 mb-2">Tus pedidos recientes</h3>
+              <div v-if="myOrders.length === 0" class="text-gray-600 text-sm">Aún no tienes pedidos.</div>
+              <div v-else class="space-y-3 max-h-64 overflow-auto">
+                <div v-for="o in myOrders" :key="o.id_order" class="border rounded p-3 text-sm">
+                  <div class="flex items-center justify-between">
+                    <div class="font-medium">#{{ (o.id_order || '').slice(0,8) }}</div>
+                    <span :class="getStatusClass(o.status)" class="px-2 py-0.5 rounded">{{ getStatusText(o.status) }}</span>
+                  </div>
+                  <div class="text-gray-600">{{ formatDate(o.created_at) }} · {{ o.order_items?.length || 0 }} productos</div>
+                  <div class="text-pink-600 font-semibold">{{ formatCOP(o.total_amount || 0) }}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -146,6 +160,13 @@ const badgeText = (status) => {
 
 const checkout = async () => {
   try {
+    // Asegurar sesión antes de crear pedido
+    const supabase = useSupabaseClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      await navigateTo('/login')
+      return
+    }
     // Obtener/crear customer para el usuario actual
     const { data: myCustomer } = await $fetch('/api/customers/my')
     if (!myCustomer?.success || !myCustomer.data?.id_customer) {
@@ -173,6 +194,17 @@ const checkout = async () => {
     $toast?.error('Error', 'Ocurrió un error creando el pedido')
   }
 }
+
+// Mis pedidos (por perfil asociado)
+const myOrders = ref([])
+const loadMyOrders = async () => {
+  try {
+    const { data } = await $fetch('/api/orders/my')
+    if (data?.success) myOrders.value = Array.isArray(data.data) ? data.data : []
+  } catch (e) { console.error('Error cargando mis pedidos', e) }
+}
+
+onMounted(() => { loadMyOrders() })
 
 // Auto refresh cada 15s opcional
 const autoRefresh = ref(false)
