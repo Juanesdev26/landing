@@ -48,8 +48,8 @@
               <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
             </div>
 
-            <!-- Cart -->
-            <NuxtLink to="/shop/cart" class="relative text-gray-700 hover:text-pink-600 transition-colors group">
+            <!-- Cart (solo usuarios) -->
+            <NuxtLink v-if="isUser" to="/shop/cart" class="relative text-gray-700 hover:text-pink-600 transition-colors group">
               <div class="p-2 rounded-full bg-gradient-to-r from-pink-100 to-purple-100 group-hover:from-pink-200 group-hover:to-purple-200 transition-all duration-300">
                 <Icon name="heroicons:shopping-cart" class="w-6 h-6" />
               </div>
@@ -73,7 +73,7 @@
     </header>
 
     <!-- Main Content -->
-    <main>
+    <main :key="$route.fullPath">
       <slot />
     </main>
 

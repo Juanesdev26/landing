@@ -24,51 +24,7 @@
       </div>
     </div>
 
-    <!-- Apartados / Reservas -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden mt-8">
-      <div class="p-4 border-b flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-gray-900">Apartados recientes</h2>
-        <button @click="fetchReservations" class="px-3 py-2 border rounded">Refrescar</button>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expira</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="r in reservations" :key="r.id_reservation">
-              <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900">{{ r.user?.email }}</div>
-                <div class="text-sm text-gray-500">{{ r.user?.first_name }} {{ r.user?.last_name }}</div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900">{{ r.product?.name }}</div>
-                <div class="text-sm text-gray-500">SKU: {{ r.product?.sku }}</div>
-              </td>
-              <td class="px-6 py-4 text-sm">{{ r.quantity }}</td>
-              <td class="px-6 py-4 text-sm">{{ formatDate(r.expires_at) }}</td>
-              <td class="px-6 py-4">
-                <span :class="r.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : r.status === 'converted' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" class="px-2 py-1 rounded text-xs">{{ r.status }}</span>
-              </td>
-              <td class="px-6 py-4 text-sm">
-                <div class="flex gap-2">
-                  <button v-if="r.status==='pending'" @click="approveReservation(r)" class="px-3 py-2 bg-emerald-600 text-white rounded">Aprobar pedido</button>
-                  <button v-if="r.status==='pending'" @click="cancelReservation(r)" class="px-3 py-2 border rounded">Cancelar</button>
-                  <button v-if="r.status!=='pending'" @click="deleteReservation(r)" class="px-3 py-2 border rounded">Eliminar</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    
     <!-- Resumen de pedidos -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
       <div class="bg-white p-6 rounded-lg shadow-sm">
@@ -206,9 +162,7 @@
             Limpiar Filtros
           </button>
         </div>
-        <div class="mt-4 text-sm text-gray-600">
-          Los pedidos pueden provenir de un apartado (reserva). Verifica pago y confirma para descontar stock.
-        </div>
+        
       </div>
     </div>
 
@@ -327,13 +281,13 @@
                     Aprobar pedido
                   </button>
                   <button
-                    v-if="!row._isReservation && row.status !== 'cancelled'"
+                    v-if="!row._isReservation && (row.status === 'pending' || row.status === 'confirmed')"
                     @click="confirmDelete(row)"
                     class="inline-flex items-center px-3 py-1.5 rounded border hover:bg-gray-50"
-                    title="Cancelar pedido"
+                    title="Eliminar pedido"
                   >
                     <Icon name="heroicons:trash" class="w-5 h-5 mr-1" />
-                    Cancelar
+                    Eliminar
                   </button>
                 </div>
               </td>
@@ -430,8 +384,8 @@
     <!-- Modal de confirmación para eliminar -->
     <ConfirmModal
       v-if="showConfirmModal"
-      title="Cancelar Pedido"
-      message="¿Estás seguro de que quieres cancelar este pedido? Esta acción no se puede deshacer."
+      title="Eliminar Pedido"
+      message="¿Estás seguro de que quieres eliminar este pedido? Esta acción no se puede deshacer."
       @confirm="deleteOrder"
       @cancel="showConfirmModal = false"
     />
@@ -723,7 +677,7 @@ const deleteOrder = async () => {
       method: 'DELETE'
     })
     if (data.success) {
-      $toast?.success('Pedido cancelado')
+      $toast?.success('Pedido eliminado')
       await fetchOrders()
       showConfirmModal.value = false
       orderToDelete.value = null
@@ -731,7 +685,7 @@ const deleteOrder = async () => {
       $toast?.error('Error', data.error)
     }
   } catch (error) {
-    $toast?.error('Error', 'No fue posible cancelar el pedido')
+    $toast?.error('Error', 'No fue posible eliminar el pedido')
   }
 }
 

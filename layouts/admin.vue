@@ -137,11 +137,9 @@
         </div>
       </header>
 
-      <!-- Page Content -->
-      <main class="p-6">
-        <KeepAlive>
-          <slot />
-        </KeepAlive>
+      <!-- Page Content (sin cache para evitar botones trabados) -->
+      <main class="p-6" :key="$route.fullPath">
+        <slot />
       </main>
     </div>
   </div>

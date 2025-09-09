@@ -42,13 +42,14 @@
         </p>
 
         <div class="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-          <NuxtLink 
-            to="/shop" 
+          <a 
+            href="#"
+            @click.prevent="goAdd()"
             class="group relative px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full font-semibold text-lg hover:from-pink-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
           >
             <span class="relative z-10">Ver Productos</span>
             <div class="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </NuxtLink>
+          </a>
           
           <NuxtLink 
             to="/shop/category/1" 
@@ -256,6 +257,17 @@ const fetchHomeData = async () => {
 }
 
 onMounted(fetchHomeData)
+
+// Intento de agregar: si no hay sesión, ir a login y luego /user agregará
+const supabase = useSupabaseClient()
+const router = useRouter()
+const { setAddIntent } = useAddIntent()
+const goAdd = async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  setAddIntent({})
+  if (!session) return router.push('/login')
+  return router.push('/user')
+}
 </script>
 
 <style scoped>

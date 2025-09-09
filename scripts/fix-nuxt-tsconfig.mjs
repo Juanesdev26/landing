@@ -19,14 +19,11 @@ try {
     const json = JSON.parse(raw)
     json.compilerOptions = json.compilerOptions || {}
 
-    if (json.compilerOptions.module !== 'esnext' && json.compilerOptions.module !== 'ESNext') {
-      json.compilerOptions.module = 'esnext'
-      writeFileSync(tsconfigPath, JSON.stringify(json, null, 2))
-      console.log(`[fix-nuxt-tsconfig] ${relPath}: fijado compilerOptions.module = "esnext"`)
-      changed++
-    } else {
-      console.log(`[fix-nuxt-tsconfig] ${relPath}: ya estaba en "esnext"`)
-    }
+    // Forzar explícitamente a ES2022 para evitar incompatibilidades del TS Server
+    json.compilerOptions.module = 'es2022'
+    writeFileSync(tsconfigPath, JSON.stringify(json, null, 2))
+    console.log(`[fix-nuxt-tsconfig] ${relPath}: fijado compilerOptions.module = "es2022"`)
+    changed++
   }
 
   if (changed === 0) {

@@ -94,11 +94,14 @@
               <div v-else class="space-y-3 max-h-64 overflow-auto">
                 <div v-for="o in myOrders" :key="o.id_order" class="border rounded p-3 text-sm">
                   <div class="flex items-center justify-between">
-                    <div class="font-medium">#{{ (o.id_order || '').slice(0,8) }}</div>
+                    <NuxtLink :to="`/orders/${o.id_order}`" class="font-medium text-pink-600 hover:text-pink-700">#{{ (o.id_order || '').slice(0,8) }}</NuxtLink>
                     <span :class="getStatusClass(o.status)" class="px-2 py-0.5 rounded">{{ getStatusText(o.status) }}</span>
                   </div>
                   <div class="text-gray-600">{{ formatDate(o.created_at) }} · {{ o.order_items?.length || 0 }} productos</div>
-                  <div class="text-pink-600 font-semibold">{{ formatCOP(o.total_amount || 0) }}</div>
+                  <div class="flex items-center justify-between">
+                    <div class="text-pink-600 font-semibold">{{ formatCOP(o.total_amount || 0) }}</div>
+                    <button v-if="o.status === 'pending'" @click="cancel(o.id_order)" class="text-red-600 hover:text-red-700">Cancelar</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -110,7 +113,8 @@
 </template>
 
 <script setup>
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', middleware: 'user-only' })
+import { useCartStore } from '~/stores/cart'
 const cart = useCartStore()
 const { formatCOP } = useCurrency()
 
@@ -199,6 +203,8 @@ const checkout = async () => {
 const myOrders = ref([])
 const loadMyOrders = async () => {
   try {
+    // Asegurar que exista el customer vinculado al usuario
+    try { await $fetch('/api/customers/my') } catch (_) {}
     const { data } = await $fetch('/api/orders/my')
     if (data?.success) myOrders.value = Array.isArray(data.data) ? data.data : []
   } catch (e) { console.error('Error cargando mis pedidos', e) }
@@ -220,6 +226,24 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (intervalId) clearInterval(intervalId)
 })
+
+// Helpers UI
+const formatDate = (d) => new Date(d).toLocaleString()
+const getStatusClass = (s) => ({ pending: 'bg-yellow-100 text-yellow-800', confirmed: 'bg-blue-100 text-blue-800', shipped: 'bg-purple-100 text-purple-800', delivered: 'bg-green-100 text-green-800', cancelled: 'bg-red-100 text-red-800' }[s] || 'bg-gray-100 text-gray-800')
+const getStatusText = (s) => ({ pending: 'Pendiente', confirmed: 'Confirmado', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' }[s] || s)
+
+const cancel = async (id) => {
+  if (!confirm('¿Cancelar este pedido?')) return
+  try {
+    const res = await $fetch(`/api/orders/${id}/cancel`, { method: 'POST' })
+    const ok = res?.data?.success || res?.success
+    if (ok) {
+      await loadMyOrders()
+      const { $toast } = useNuxtApp()
+      $toast?.success('Pedido cancelado')
+    }
+  } catch (e) { console.error('Cancel error', e) }
+}
 </script>
 
 

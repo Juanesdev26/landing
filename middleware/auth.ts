@@ -5,7 +5,7 @@
 import type { RouteLocationNormalized } from 'vue-router'
 
 export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => {
-  // Solo ejecutar en el cliente
+  // Ejecutar solo en el cliente; la verificación SSR la realiza server/middleware/require-auth.ts
   if (process.client) {
     // Rutas públicas que no requieren autenticación
     const publicRoutes = ['/', '/login', '/register', '/about', '/shop', '/shop/category/*']

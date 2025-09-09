@@ -10,6 +10,12 @@
     <!-- Main Content -->
     <div class="relative z-10 min-h-screen flex items-center justify-center p-4">
       <div class="w-full max-w-md">
+        <!-- Back to home -->
+        <div class="mb-4 flex justify-end">
+          <NuxtLink to="/" class="text-sm text-white/80 hover:text-white underline underline-offset-4">
+            Volver al inicio
+          </NuxtLink>
+        </div>
         <!-- Login Card -->
         <div class="bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8">
           <!-- Header -->
@@ -150,6 +156,7 @@ const password = ref('')
 
 const { login } = useAuth()
 const supabase = useSupabaseClient()
+const router = useRouter()
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
@@ -170,14 +177,17 @@ const handleLogin = async () => {
         error.value = 'No se pudo obtener el perfil'
         return
       }
-      // Redirección por rol
-      if (user.role === 'admin') {
-        await navigateTo('/dashboard')
-      } else if (user.role === 'user') {
-        await navigateTo('/user')
-      } else {
-        await navigateTo('/')
-      }
+      // Deja que el plugin de auth redirija por rol para evitar doble navegación.
+      // Fallback: si seguimos en /login después de 1500ms, redirigimos aquí.
+      setTimeout(async () => {
+        try {
+          if (router.currentRoute.value.path === '/login') {
+            if (user.role === 'admin') await router.replace('/dashboard')
+            else if (user.role === 'user') await router.replace('/user')
+            else await router.replace('/')
+          }
+        } catch (_e) {}
+      }, 1500)
     } else {
       error.value = result.error || 'Credenciales incorrectas'
     }

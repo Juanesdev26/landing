@@ -156,6 +156,22 @@
 definePageMeta({
   layout: 'default'
 })
+
+const supabase = useSupabaseClient()
+const router = useRouter()
+const { setAddIntent } = useAddIntent()
+
+const ensureUserAndRedirectToUser = async (productId, quantity = 1) => {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    setAddIntent({ productId, quantity })
+    await router.push('/login')
+    return
+  }
+  // Si hay sesión, ir a /user con intención para que se agregue allí
+  setAddIntent({ productId, quantity })
+  await router.push('/user')
+}
 </script>
 
 

@@ -1,4 +1,4 @@
-import { serverSupabaseClient } from '#supabase/server'
+import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import { respondError, respondSuccess } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -7,9 +7,8 @@ export default defineEventHandler(async (event) => {
   if (method !== 'GET') return respondError('Método no permitido')
 
   try {
-    // Obtener usuario de forma segura sin lanzar error cuando no hay sesión
-    const { data: userData } = await supabase.auth.getUser()
-    const authUser = userData?.user || null
+    // Obtener usuario autenticado desde las cookies del request (server-side)
+    const authUser = await serverSupabaseUser(event)
     if (!authUser) return respondSuccess([])
 
     // Obtener el customer del usuario

@@ -263,7 +263,8 @@
 
 <script setup>
 definePageMeta({
-  layout: 'admin'
+  layout: 'admin',
+  middleware: 'auth'
 })
 
 // Estado reactivo
@@ -530,7 +531,7 @@ const checkAuthentication = async () => {
 
 // Lifecycle
 onMounted(async () => {
-  await checkAuthentication()
+  // auth via middleware
   await fetchProducts()
   await fetchCategories()
 })

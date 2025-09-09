@@ -8,6 +8,50 @@
         </NuxtLink>
       </div>
 
+      <!-- Mis pedidos -->
+      <div class="bg-white rounded-lg shadow-sm p-4 mb-8">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold text-gray-900">Mis pedidos</h2>
+          <button @click="fetchMyOrders" class="text-pink-600 hover:text-pink-700 text-sm">Actualizar</button>
+        </div>
+        <div v-if="ordersLoading" class="text-gray-600">Cargando pedidos...</div>
+        <div v-else>
+          <div v-if="orders.length === 0" class="text-gray-600">Aún no tienes pedidos.</div>
+          <div v-else class="space-y-4">
+            <div v-for="o in orders" :key="o.id_order" class="border rounded-lg p-4">
+              <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                  <div class="text-sm text-gray-500">ID: {{ o.id_order }}</div>
+                  <div class="text-sm text-gray-500">Fecha: {{ new Date(o.created_at).toLocaleString() }}</div>
+                </div>
+                <span :class="[
+                  'inline-flex items-center px-2 py-1 text-xs font-medium rounded-full',
+                  o.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                  o.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                  o.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                  o.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                  'bg-red-100 text-red-800'
+                ]">{{ o.status }}</span>
+              </div>
+              <div class="mt-3 divide-y">
+                <div v-for="it in (o.order_items || [])" :key="it.id_order_item" class="py-2 flex items-center gap-3">
+                  <div class="w-12 h-12 rounded bg-gray-100 flex items-center justify-center overflow-hidden">
+                    <img v-if="it.product?.image_url" :src="it.product.image_url" :alt="it.product?.name" class="w-full h-full object-cover" />
+                    <Icon v-else name="heroicons:cube" class="w-6 h-6 text-pink-500" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium text-gray-900 truncate">{{ it.product?.name }}</div>
+                    <div class="text-sm text-gray-500">SKU: {{ it.product?.sku }} · Cant: {{ it.quantity }}</div>
+                  </div>
+                  <div class="text-sm font-medium text-gray-900">$ {{ Number(it.total_price || (it.quantity * it.unit_price)).toLocaleString('es-CO') }}</div>
+                </div>
+              </div>
+              <div class="mt-3 text-right text-sm text-gray-700">Subtotal: {{ formatCOP(o.subtotal || 0) }} · Total: {{ formatCOP(o.total_amount || 0) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="bg-white rounded-lg shadow-sm p-4 mb-8">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-semibold text-gray-900">Productos en tu carrito</h2>
@@ -80,6 +124,10 @@ import { useCartStore } from '~/stores/cart'
 const cart = useCartStore()
 const quantities = reactive({})
 const myReservations = ref([])
+const { consumeAddIntent } = useAddIntent()
+const router = useRouter()
+const ordersLoading = ref(false)
+const orders = ref([])
 
 const discountedPrice = (price, percent) => {
   if (!price) return 0
@@ -105,6 +153,20 @@ const loadMyReservations = async () => {
     const { data } = await $fetch('/api/reservations/my')
     if (data?.success) myReservations.value = Array.isArray(data.data) ? data.data : []
   } catch (e) { console.error('Error cargando reservas', e) }
+}
+
+const fetchMyOrders = async () => {
+  ordersLoading.value = true
+  try {
+    // Asegurar que exista customer asociado (lo crea si falta)
+    try { await $fetch('/api/customers/my') } catch (_) {}
+    const { data } = await $fetch('/api/orders/my')
+    if (data?.success) orders.value = Array.isArray(data.data) ? data.data : []
+  } catch (e) {
+    console.error('Error cargando mis pedidos', e)
+  } finally {
+    ordersLoading.value = false
+  }
 }
 
 const reservationStatus = (productId) => {
@@ -139,7 +201,19 @@ const addToCart = async (offer) => {
   } catch (e) { console.error('No se pudo crear reserva', e) }
 }
 
-onMounted(async () => { await Promise.all([fetchOffers(), loadMyReservations()]) })
+onMounted(async () => {
+  await Promise.all([fetchOffers(), loadMyReservations(), fetchMyOrders()])
+  // Consumir intención de agregado tras login/redirección
+  const intent = consumeAddIntent()
+  if (intent?.productId) {
+    const offer = offers.value.find(o => o.product?.id_product === intent.productId)
+    if (offer && intent.quantity && intent.quantity > 0) {
+      quantities[offer.id_offer] = intent.quantity
+      await addToCart(offer)
+      try { await router.push('/shop/cart') } catch (_e) {}
+    }
+  }
+})
 </script>
 
 

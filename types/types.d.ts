@@ -18,7 +18,7 @@ declare module '@vue/runtime-core' {
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'manager' | 'customer';
+  role: 'admin' | 'user' | 'customer' | 'manager';
   name?: string;
   avatar?: string;
   created_at: string;
@@ -30,7 +30,7 @@ export interface UserProfile {
   email: string;
   first_name: string;
   last_name: string;
-  role: 'admin' | 'manager' | 'customer';
+  role: 'admin' | 'user' | 'customer' | 'manager';
   avatar_url?: string;
   phone?: string;
   address?: string;

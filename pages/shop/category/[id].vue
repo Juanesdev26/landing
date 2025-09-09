@@ -40,7 +40,7 @@
               <span class="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                 ${{ (Math.random() * 100 + 20).toFixed(2) }}
               </span>
-              <button class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-2 rounded-full hover:from-pink-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+              <button @click="handleAdd(i)" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-2 rounded-full hover:from-pink-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                 Agregar
               </button>
             </div>
@@ -111,6 +111,21 @@ useHead({
     { name: 'description', content: categoryDescription }
   ]
 })
+
+const supabase = useSupabaseClient()
+const router = useRouter()
+const { setAddIntent } = useAddIntent()
+const handleAdd = async (i) => {
+  const { data: { session } } = await supabase.auth.getSession()
+  const fakeProductId = String(i) // placeholder para demo; en real usar id_product
+  if (!session) {
+    setAddIntent({ productId: fakeProductId, quantity: 1 })
+    await router.push('/login')
+    return
+  }
+  setAddIntent({ productId: fakeProductId, quantity: 1 })
+  await router.push('/user')
+}
 </script>
 
 
