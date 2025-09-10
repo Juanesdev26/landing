@@ -117,19 +117,30 @@ export const useAuth = () => {
   // Función para verificar autenticación al cargar la página
   const checkAuth = async () => {
     try {
-      // Verificar sesión de Supabase
-      const { data: { session }, error } = await supabase.auth.getSession()
+      // Verificar sesión de Supabase con timeout
+      const sessionPromise = supabase.auth.getSession()
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Session check timeout')), 5000)
+      )
+      
+      const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any
       
       if (error || !session) {
         return false
       }
 
-      // Obtener perfil del usuario desde la tabla profiles
-      const { data: profile, error: profileError } = await supabase
+      // Obtener perfil del usuario desde la tabla profiles con timeout
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .single()
+      
+      const profileTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+      )
+      
+      const { data: profile, error: profileError } = await Promise.race([profilePromise, profileTimeoutPromise]) as any
 
       if (profileError || !profile) {
         return false

@@ -47,6 +47,14 @@ export default defineNuxtConfig({
     renderJsonPayloads: false
   },
   
+  // Configuración de renderizado para evitar problemas de cache
+  render: {
+    bundleRenderer: {
+      shouldPreload: () => false,
+      shouldPrefetch: () => false
+    }
+  },
+  
   // Configuración de la aplicación
   app: {
     head: {
@@ -70,7 +78,8 @@ export default defineNuxtConfig({
         }
       ]
     },
-    pageTransition: { name: 'page', mode: 'out-in' }
+    pageTransition: { name: 'page', mode: 'out-in' },
+    keepalive: false
   },
 
   // Color Mode Nuxt UI

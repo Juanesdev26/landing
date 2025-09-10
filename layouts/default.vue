@@ -73,7 +73,7 @@
     </header>
 
     <!-- Main Content -->
-    <main :key="$route.fullPath">
+    <main :key="`${$route.fullPath}-${refreshKey}`">
       <slot />
     </main>
 
@@ -185,6 +185,26 @@ const { logout } = useAuth()
 const { user } = useAuth()
 const isUser = computed(() => user.value?.role === 'user')
 
+// Key para forzar re-renderizado cuando sea necesario
+const refreshKey = ref(0)
+
+// Detectar inactividad y forzar refresh
+let lastInteraction = Date.now()
+const INACTIVITY_THRESHOLD = 5 * 60 * 1000 // 5 minutos
+
+const handleUserActivity = () => {
+  lastInteraction = Date.now()
+}
+
+const checkForInactivity = () => {
+  const now = Date.now()
+  if (now - lastInteraction > INACTIVITY_THRESHOLD) {
+    // Forzar re-render incrementando la key
+    refreshKey.value++
+    lastInteraction = now
+  }
+}
+
 const handleLogout = async () => {
   try { await logout() } catch (e) { console.error(e) }
 }
@@ -193,5 +213,26 @@ const handleLogout = async () => {
 onMounted(() => {
   // Simular datos de carrito
   cartItemsCount.value = 0
+  
+  // Eventos para detectar actividad
+  const events = ['click', 'mousemove', 'keydown', 'scroll', 'touchstart']
+  events.forEach(event => {
+    document.addEventListener(event, handleUserActivity, { passive: true })
+  })
+  
+  // Verificar inactividad cada minuto
+  setInterval(checkForInactivity, 60000)
+  
+  // Forzar refresh cuando la ventana recupera el foco
+  window.addEventListener('focus', () => {
+    refreshKey.value++
+  })
+  
+  // Forzar refresh cuando la página se vuelve visible
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      refreshKey.value++
+    }
+  })
 })
 </script>
