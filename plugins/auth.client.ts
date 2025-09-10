@@ -11,6 +11,28 @@ export default defineNuxtPlugin(async () => {
   
   if (import.meta.env.DEV) console.log('🔐 Plugin de autenticación iniciado')
   
+  // Helper: esperar hasta que el perfil exista y tenga rol
+  const waitForProfileRole = async (userId: string, maxMs = 3000) => {
+    const start = Date.now()
+    let lastRole: string | null = null
+    while (Date.now() - start < maxMs) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', userId)
+          .maybeSingle()
+        const roleVal = (data as { role?: string } | null)?.role
+        if (!error && roleVal) {
+          lastRole = String(roleVal)
+          break
+        }
+      } catch {}
+      await new Promise(r => setTimeout(r, 120))
+    }
+    return lastRole
+  }
+  
   // Verificar sesión de Supabase al cargar la aplicación
   try {
     const { data: { session }, error } = await supabase.auth.getSession()
@@ -22,12 +44,19 @@ export default defineNuxtPlugin(async () => {
     
     if (session) {
       if (import.meta.env.DEV) console.log('✅ Sesión encontrada para usuario:', session.user.email)
-      const isAuthenticated = await checkAuth()
-      if (isAuthenticated) {
+      // Asegurar que el rol esté listo antes de redirigir
+      let ok = await checkAuth()
+      if (!ok) {
+        const roleReady = await waitForProfileRole(session.user.id)
+        if (roleReady) {
+          // refrescar auth para poblar estado
+          ok = await checkAuth()
+        }
+      }
+      if (ok) {
         try {
           const role = (user.value?.role as unknown as string)
           if (router.currentRoute.value.path === '/' || router.currentRoute.value.path === '/login') {
-            // Evitar forzar layout antes de que carguen estilos: esperar a que el router y la página estén listos
             try { await router.isReady() } catch {}
             if (document.readyState !== 'complete') {
               await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
@@ -57,10 +86,10 @@ export default defineNuxtPlugin(async () => {
       } catch (e) {
         console.warn('No se pudo actualizar perfil tras login', e)
       }
-      await checkAuth()
-      // Redirección por rol tras login
+      // Esperar a que el perfil tenga rol y luego redirigir
       try {
-        const role = (user.value?.role as unknown as string)
+        const role = (await waitForProfileRole(session.user.id)) || (user.value?.role as unknown as string)
+        await checkAuth()
         try { await router.isReady() } catch {}
         if (document.readyState !== 'complete') {
           await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
