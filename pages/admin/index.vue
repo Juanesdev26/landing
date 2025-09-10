@@ -348,7 +348,7 @@
 <script setup>
 definePageMeta({
   layout: 'admin',
-  middleware: 'auth'
+  // sin middleware; lo maneja admin.global + SSR
 })
 
 const { user } = useAuth()

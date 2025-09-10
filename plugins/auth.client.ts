@@ -9,7 +9,7 @@ export default defineNuxtPlugin(async () => {
   const { user } = useAuth()
   const router = useRouter()
   
-  console.log('🔐 Plugin de autenticación iniciado')
+  if (import.meta.env.DEV) console.log('🔐 Plugin de autenticación iniciado')
   
   // Verificar sesión de Supabase al cargar la aplicación
   try {
@@ -21,31 +21,25 @@ export default defineNuxtPlugin(async () => {
     }
     
     if (session) {
-      console.log('✅ Sesión encontrada para usuario:', session.user.email)
-      
-      // Usar el método checkAuth del composable para manejar la autenticación
+      if (import.meta.env.DEV) console.log('✅ Sesión encontrada para usuario:', session.user.email)
       const isAuthenticated = await checkAuth()
-      
       if (isAuthenticated) {
-        console.log('✅ Usuario autenticado como admin')
-        // Redirección por rol en carga inicial
         try {
           const role = (user.value?.role as unknown as string)
-          if (role === 'admin') {
-            if (router.currentRoute.value.path === '/' || router.currentRoute.value.path === '/login') {
-              await router.replace('/dashboard')
+          if (router.currentRoute.value.path === '/' || router.currentRoute.value.path === '/login') {
+            // Evitar forzar layout antes de que carguen estilos: esperar a que el router y la página estén listos
+            try { await router.isReady() } catch {}
+            if (document.readyState !== 'complete') {
+              await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
             }
-          } else if (role === 'user') {
-            if (router.currentRoute.value.path === '/' || router.currentRoute.value.path === '/login') {
-              await router.replace('/user')
-            }
+            await nextTick()
+            if (role === 'admin') await router.replace('/dashboard')
+            else if (role === 'user') await router.replace('/user')
           }
         } catch (_e) {}
-      } else {
-        console.log('❌ Usuario no es admin o error en autenticación')
       }
     } else {
-      console.log('ℹ️ No hay sesión activa')
+      if (import.meta.env.DEV) console.log('ℹ️ No hay sesión activa')
     }
   } catch (error) {
     console.error('❌ Error verificando sesión:', error)
@@ -56,7 +50,7 @@ export default defineNuxtPlugin(async () => {
     console.log('🔄 Cambio de estado de autenticación:', event)
     
     if (event === 'SIGNED_IN' && session) {
-      console.log('✅ Usuario inició sesión:', session.user.email)
+      if (import.meta.env.DEV) console.log('✅ Usuario inició sesión:', session.user.email)
       // Upsert/upgrade profile to role 'user' after third-party login
       try {
         await $fetch('/api/auth/upsert-profile', { method: 'POST' })
@@ -67,15 +61,22 @@ export default defineNuxtPlugin(async () => {
       // Redirección por rol tras login
       try {
         const role = (user.value?.role as unknown as string)
+        try { await router.isReady() } catch {}
+        if (document.readyState !== 'complete') {
+          await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
+        }
+        await nextTick()
         if (role === 'admin') await router.replace('/dashboard')
         else if (role === 'user') await router.replace('/user')
       } catch (_e) {}
-    } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-      console.log('🚪 Usuario cerró sesión')
-      // Limpiar estado local si es necesario
+    } else if (event === 'SIGNED_OUT') {
+      if (import.meta.env.DEV) console.log('🚪 Usuario cerró sesión')
+      // Redirigir a inicio una sola vez, esperando router y estilos
       try {
-        // Forzar navegación limpia al home para resetear vistas cacheadas
-        // Usar nextTick para evitar colisiones con otras navegaciones
+        try { await router.isReady() } catch {}
+        if (document.readyState !== 'complete') {
+          await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
+        }
         await nextTick()
         if (router.currentRoute.value.path !== '/') await router.replace('/')
       } catch (_e) {}

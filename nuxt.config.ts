@@ -73,8 +73,9 @@ export default defineNuxtConfig({
       ],
       script: [
         {
-          // Establecer tema lo antes posible para evitar FOUC
-          children: `;(function(){try{var t=localStorage.getItem('theme');var isDark=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var e=document.documentElement;e.classList.remove('theme-light','theme-dark');e.classList.add(isDark?'theme-dark':'theme-light');e.classList.toggle('dark',isDark);}catch(_e){}})();`
+          // Establecer tema lo antes posible para evitar FOUC y layout thrash
+          tagPosition: 'head',
+          children: `;(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var e=document.documentElement;e.classList.remove('theme-light','theme-dark','dark');if(d){e.classList.add('theme-dark');e.classList.add('dark');}else{e.classList.add('theme-light');}}catch(_e){}})();`
         }
       ]
     },

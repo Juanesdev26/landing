@@ -6,7 +6,8 @@ export default defineNuxtPlugin(() => {
   
   let isChecking = false
   let lastCheck = 0
-  const CHECK_COOLDOWN = 2000 // 2 segundos entre verificaciones
+  const CHECK_COOLDOWN = 15000 // 15 segundos entre verificaciones
+  let lastCheckedPath = ''
 
   const protectedPath = (p: string) => p.startsWith('/admin') || p.startsWith('/user') || p.startsWith('/shop/cart')
 
@@ -15,14 +16,15 @@ export default defineNuxtPlugin(() => {
     if (isChecking) return
     
     const now = Date.now()
-    if (now - lastCheck < CHECK_COOLDOWN) return
+    const currentPath = router.currentRoute.value.path
+    if (now - lastCheck < CHECK_COOLDOWN && currentPath === lastCheckedPath) return
     
     isChecking = true
     lastCheck = now
     
     try {
       const { data: { session }, error } = await supabase.auth.getSession()
-      const current = router.currentRoute.value.path
+      const current = currentPath
       
       if (error) {
         console.warn('Session check error:', error)
@@ -33,6 +35,7 @@ export default defineNuxtPlugin(() => {
         console.log('No session for protected path, redirecting to login')
         await router.replace('/login')
       }
+      lastCheckedPath = current
     } catch (error) {
       console.warn('Session focus check failed:', error)
     } finally {
@@ -40,10 +43,11 @@ export default defineNuxtPlugin(() => {
     }
   }
 
-  // Eventos de reactivación con throttling
-  window.addEventListener('focus', check, { passive: true })
+  // Eventos de reactivación con throttling (solo visibilidad; quitamos focus para reducir ruido)
   document.addEventListener('visibilitychange', () => { 
-    if (document.visibilityState === 'visible') check() 
+    if (document.visibilityState === 'visible') {
+      setTimeout(() => { check() }, 300)
+    }
   }, { passive: true })
 })
 

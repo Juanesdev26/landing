@@ -264,7 +264,7 @@
 <script setup>
 definePageMeta({
   layout: 'admin',
-  middleware: 'auth'
+  // auth por admin.global + SSR
 })
 
 // Estado reactivo

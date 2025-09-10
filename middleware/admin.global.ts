@@ -5,27 +5,17 @@ export default defineNuxtRouteMiddleware(async (to: any) => {
   // Ejecutar únicamente en el cliente para mantenerse consistente con el resto del proyecto
   if (!process.client) return
 
-  const supabase = useSupabaseClient()
-
-  try {
-    const { data: { session }, error } = await supabase.auth.getSession()
-    if (error || !session) {
-      return navigateTo('/login')
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
-
-    const userRole = (profile as any)?.role
-    if (profileError || !userRole || userRole !== 'admin') {
-      return navigateTo('/unauthorized')
-    }
-  } catch (e) {
-    return navigateTo('/login')
+  // Usar estado local si ya existe para evitar roundtrips
+  const { user, checkAuth } = useAuth()
+  let role = user.value?.role as any
+  
+  if (!role) {
+    const ok = await checkAuth()
+    role = ok ? (user.value?.role as any) : null
   }
+
+  if (!role) return navigateTo('/login')
+  if (role !== 'admin') return navigateTo('/unauthorized')
 })
 
 

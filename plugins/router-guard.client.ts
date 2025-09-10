@@ -1,3 +1,5 @@
+import { isNavigationFailure, NavigationFailureType } from 'vue-router'
+
 export default defineNuxtPlugin(() => {
   const router = useRouter()
 
@@ -10,6 +12,7 @@ export default defineNuxtPlugin(() => {
 
   router.afterEach((_to, _from, failure) => {
     if (!failure) return
+    if (isNavigationFailure(failure, NavigationFailureType.duplicated)) return
     const msg = String((failure as any)?.message || '')
     if (msg.includes('Avoided redundant navigation')) return
     console.warn('[router failure]', failure)

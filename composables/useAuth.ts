@@ -100,10 +100,7 @@ export const useAuth = () => {
         localStorage.removeItem('user')
         localStorage.removeItem('isAuthenticated')
       }
-      
-      // Redirigir a la página principal
-      await navigateTo('/')
-      
+
       return { success: true }
     } catch (error) {
       console.error('Error en logout:', error)
@@ -168,7 +165,8 @@ export const useAuth = () => {
       
       return true
     } catch (error) {
-      console.error('Error verificando autenticación:', error)
+      // Evitar ruido en consola por timeouts intermitentes; log suave en dev
+      if (import.meta.env.DEV) console.warn('Auth check issue:', error)
       return false
     }
   }
