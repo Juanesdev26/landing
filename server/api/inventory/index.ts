@@ -40,9 +40,9 @@ export default defineEventHandler(async (event) => {
     if (productIds.length > 0) {
       const { data: lastMovements, error: lmError } = await supabase
         .from('inventory_movements')
-        .select('product_id, movement_date')
+        .select('product_id, movement_date:created_at')
         .in('product_id', productIds)
-        .order('movement_date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (!lmError && lastMovements) {
         for (const m of lastMovements as any[]) {

@@ -18,10 +18,10 @@
 
           <!-- Navigation -->
           <nav class="hidden md:flex space-x-8">
-            <NuxtLink v-if="isUser" to="/user" class="relative text-gray-700 hover:text-pink-600 transition-colors font-medium group">
+            <button v-if="isUser" @click="navigateToOffers" class="relative text-gray-700 hover:text-pink-600 transition-colors font-medium group">
               Mis Ofertas
               <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600 group-hover:w-full transition-all duration-300"></span>
-            </NuxtLink>
+            </button>
             <NuxtLink to="/shop" class="relative text-gray-700 hover:text-pink-600 transition-colors font-medium group">
               Productos
               <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600 group-hover:w-full transition-all duration-300"></span>
@@ -49,14 +49,14 @@
             </div>
 
             <!-- Cart (solo usuarios) -->
-            <NuxtLink v-if="isUser" to="/shop/cart" class="relative text-gray-700 hover:text-pink-600 transition-colors group">
+            <button v-if="isUser" @click="navigateToCart" class="relative text-gray-700 hover:text-pink-600 transition-colors group">
               <div class="p-2 rounded-full bg-gradient-to-r from-pink-100 to-purple-100 group-hover:from-pink-200 group-hover:to-purple-200 transition-all duration-300">
                 <Icon name="heroicons:shopping-cart" class="w-6 h-6" />
               </div>
               <span v-if="cartItemsCount > 0" class="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg animate-pulse">
                 {{ cartItemsCount }}
               </span>
-            </NuxtLink>
+            </button>
 
             <!-- Login Button (oculto si hay sesión) -->
             <NuxtLink v-if="!authUser" to="/login" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-2 rounded-full font-medium hover:from-pink-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
@@ -207,6 +207,26 @@ const checkForInactivity = () => {
 
 const handleLogout = async () => {
   try { await logout() } catch (e) { console.error(e) }
+}
+
+// Composable para navegación de usuario
+const { navigateToOffers: navToOffers, navigateToCart: navToCart } = useUserNavigation()
+
+// Funciones de navegación mejoradas para usuarios
+const navigateToOffers = async () => {
+  // Forzar refresh antes de navegar
+  refreshKey.value++
+  await nextTick()
+  
+  await navToOffers()
+}
+
+const navigateToCart = async () => {
+  // Forzar refresh antes de navegar
+  refreshKey.value++
+  await nextTick()
+  
+  await navToCart()
 }
 
 // Inicializar datos básicos

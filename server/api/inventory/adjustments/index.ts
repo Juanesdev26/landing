@@ -61,7 +61,6 @@ export default defineEventHandler(async (event) => {
       stock_after: newStock,
       reason: body.reason,
       description: body.description || `Ajuste de stock: ${body.adjustment_type}`,
-      movement_date: body.adjustment_date || new Date().toISOString(),
       reference: body.reference || null
     }
 

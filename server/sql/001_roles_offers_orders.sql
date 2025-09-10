@@ -102,11 +102,11 @@ RETURNS TABLE (
   stock_quantity integer
 ) AS $$
 BEGIN
-  UPDATE public.products
-  SET stock_quantity = GREATEST(0, COALESCE(stock_quantity, 0) + p_delta),
+  UPDATE public.products AS p
+  SET stock_quantity = GREATEST(0, COALESCE(p.stock_quantity, 0) + p_delta),
       updated_at = now()
-  WHERE id_product = p_id_product
-  RETURNING products.id_product, products.stock_quantity
+  WHERE p.id_product = p_id_product
+  RETURNING p.id_product, p.stock_quantity
   INTO id_product, stock_quantity;
 
   RETURN NEXT;

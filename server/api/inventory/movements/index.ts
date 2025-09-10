@@ -22,12 +22,12 @@ export default defineEventHandler(async (event) => {
         return respondError('ID de producto requerido')
       }
 
-      // Obtener movimientos del producto ordenados por fecha
+      // Obtener movimientos del producto ordenados por fecha (usar created_at y exponer alias movement_date)
       const { data: movements, error } = await supabase
         .from('inventory_movements')
-        .select('*')
+        .select('*, movement_date:created_at')
         .eq('product_id', productId)
-        .order('movement_date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('Error obteniendo movimientos:', error)
@@ -91,7 +91,6 @@ export default defineEventHandler(async (event) => {
         stock_after: newStock,
         reason: body.reason,
         description: body.description || null,
-        movement_date: body.movement_date || new Date().toISOString(),
         reference: body.reference || null
       }
 
@@ -126,7 +125,9 @@ export default defineEventHandler(async (event) => {
         return respondError('Error actualizando stock del producto')
       }
 
-      return respondSuccess(movement)
+      // Incluir alias movement_date en la respuesta para consistencia con el frontend
+      const movementWithAlias = movement ? { ...movement, movement_date: (movement as any).created_at } : movement
+      return respondSuccess(movementWithAlias)
     } catch (error) {
       console.error('Error inesperado:', error)
       return respondError('Error interno del servidor')

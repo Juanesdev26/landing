@@ -115,7 +115,10 @@
 </template>
 
 <script setup>
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ 
+  middleware: 'user-only',
+  key: route => `user-${route.fullPath}-${Date.now()}`
+})
 
 const loading = ref(true)
 const offers = ref([])
@@ -201,8 +204,28 @@ const addToCart = async (offer) => {
   } catch (e) { console.error('No se pudo crear reserva', e) }
 }
 
+// Función para recargar datos tras inactividad
+const reloadData = async () => {
+  console.log('🔄 Recargando datos de usuario tras reactivación...')
+  await Promise.all([fetchOffers(), loadMyReservations(), fetchMyOrders()])
+}
+
+// Detectar reactivación
+let lastDataLoad = Date.now()
+const DATA_RELOAD_THRESHOLD = 5 * 60 * 1000 // 5 minutos
+
+const checkDataReload = () => {
+  const now = Date.now()
+  if (now - lastDataLoad > DATA_RELOAD_THRESHOLD) {
+    reloadData()
+    lastDataLoad = now
+  }
+}
+
 onMounted(async () => {
   await Promise.all([fetchOffers(), loadMyReservations(), fetchMyOrders()])
+  lastDataLoad = Date.now()
+  
   // Consumir intención de agregado tras login/redirección
   const intent = consumeAddIntent()
   if (intent?.productId) {
@@ -213,6 +236,17 @@ onMounted(async () => {
       try { await router.push('/shop/cart') } catch (_e) {}
     }
   }
+  
+  // Listeners para reactivación
+  window.addEventListener('focus', checkDataReload, { passive: true })
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkDataReload()
+    }
+  }, { passive: true })
+  
+  // Verificación periódica
+  setInterval(checkDataReload, 60000) // cada minuto
 })
 </script>
 

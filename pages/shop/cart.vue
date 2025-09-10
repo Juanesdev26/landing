@@ -113,7 +113,11 @@
 </template>
 
 <script setup>
-definePageMeta({ layout: 'default', middleware: 'user-only' })
+definePageMeta({ 
+  layout: 'default', 
+  middleware: 'user-only',
+  key: route => `cart-${route.fullPath}-${Date.now()}`
+})
 import { useCartStore } from '~/stores/cart'
 const cart = useCartStore()
 const { formatCOP } = useCurrency()
@@ -216,11 +220,42 @@ onMounted(() => { loadMyOrders() })
 const autoRefresh = ref(false)
 let intervalId = null
 
+// Función para recargar datos tras inactividad
+const reloadCartData = async () => {
+  console.log('🔄 Recargando datos del carrito tras reactivación...')
+  await Promise.all([loadMyReservations(), loadMyOrders()])
+}
+
+// Detectar reactivación
+let lastCartDataLoad = Date.now()
+const CART_DATA_RELOAD_THRESHOLD = 5 * 60 * 1000 // 5 minutos
+
+const checkCartDataReload = () => {
+  const now = Date.now()
+  if (now - lastCartDataLoad > CART_DATA_RELOAD_THRESHOLD) {
+    reloadCartData()
+    lastCartDataLoad = now
+  }
+}
+
 onMounted(async () => {
   await loadMyReservations()
+  lastCartDataLoad = Date.now()
+  
   intervalId = setInterval(() => {
     if (autoRefresh.value) loadMyReservations()
   }, 15000)
+  
+  // Listeners para reactivación
+  window.addEventListener('focus', checkCartDataReload, { passive: true })
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkCartDataReload()
+    }
+  }, { passive: true })
+  
+  // Verificación periódica
+  setInterval(checkCartDataReload, 60000) // cada minuto
 })
 
 onBeforeUnmount(() => {
