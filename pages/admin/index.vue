@@ -109,85 +109,42 @@
           </div>
         </div>
         
-        <!-- Gráfico de barras simulado -->
+        <!-- Gráfico de barras real -->
         <div class="space-y-3">
-          <div class="flex items-center space-x-2">
-            <span class="text-xs w-8 theme-text-muted">L</span>
+          <div class="flex items-center space-x-2" v-for="d in weeklySeries" :key="d.date">
+            <span class="text-xs w-16 theme-text-muted">{{ formatDay(d.date) }}</span>
             <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div class="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500" style="width: 60%"></div>
+              <div class="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500" :style="{ width: barWidth(d.sales) }"></div>
             </div>
-            <span class="text-xs w-12 theme-text-muted">$2.4k</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-xs w-8 theme-text-muted">M</span>
-            <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div class="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500" style="width: 80%"></div>
-            </div>
-            <span class="text-xs w-12 theme-text-muted">$3.2k</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-xs w-8 theme-text-muted">X</span>
-            <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div class="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500" style="width: 45%"></div>
-            </div>
-            <span class="text-xs w-12 theme-text-muted">$1.8k</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-xs w-8 theme-text-muted">J</span>
-            <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div class="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500" style="width: 90%"></div>
-            </div>
-            <span class="text-xs w-12 theme-text-muted">$3.6k</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-xs w-8 theme-text-muted">V</span>
-            <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div class="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500" style="width: 70%"></div>
-            </div>
-            <span class="text-xs w-12 theme-text-muted">$2.8k</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-xs w-8 theme-text-muted">S</span>
-            <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div class="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500" style="width: 55%"></div>
-            </div>
-            <span class="text-xs w-12 theme-text-muted">$2.2k</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-xs w-8 theme-text-muted">D</span>
-            <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div class="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500" style="width: 75%"></div>
-            </div>
-            <span class="text-xs w-12 theme-text-muted">$3.0k</span>
+            <span class="text-xs w-16 theme-text-muted">${{ formatCurrency(d.sales) }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Gráfico de Productos -->
+      <!-- Gráfico de Productos (real) -->
       <div class="card">
         <div class="flex items-center justify-between mb-6">
           <div>
             <h3 class="text-xl font-bold theme-text-primary">Productos</h3>
-            <p class="text-sm theme-text-secondary">Últimos 7 días</p>
+            <p class="text-sm theme-text-secondary">Nuevos últimos 7 días</p>
           </div>
           <div class="text-right">
-            <p class="text-2xl font-bold theme-text-primary">{{ dashboardStats.newProducts || 0 }}</p>
-            <p class="text-green-600 dark:text-green-400 text-sm font-medium">+26.5%</p>
+            <p class="text-2xl font-bold theme-text-primary">{{ productsStats.newProducts }}</p>
           </div>
         </div>
         
-        <!-- Gráfico circular simulado -->
+        <!-- Gráfico circular simple: porcentaje nuevos/total -->
         <div class="flex items-center justify-center mb-4">
           <div class="relative w-32 h-32">
             <div class="w-32 h-32 rounded-full border-8 border-gray-200 dark:border-gray-700"></div>
-            <div class="absolute inset-0 w-32 h-32 rounded-full border-8 border-blue-600 dark:border-blue-400" style="clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 50% 0%)"></div>
+            <div class="absolute inset-0 w-32 h-32 rounded-full border-8 border-blue-600 dark:border-blue-400" :style="pieClip"></div>
             <div class="absolute inset-0 flex items-center justify-center">
-              <span class="text-2xl font-bold theme-text-primary">{{ Math.round((dashboardStats.newProducts || 0) / (dashboardStats.totalProducts || 1) * 100) }}%</span>
+              <span class="text-2xl font-bold theme-text-primary">{{ productsPercent }}%</span>
             </div>
           </div>
         </div>
         
-        <p class="text-center text-sm theme-text-secondary">$18k Profit más que el mes pasado</p>
+        <p class="text-center text-sm theme-text-secondary">{{ productsStats.newProducts }} nuevos de {{ productsStats.totalProducts }}</p>
       </div>
     </div>
 
@@ -223,35 +180,7 @@
         </div>
       </div>
 
-      <!-- Última Oferta -->
-      <div class="card">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-bold theme-text-primary">Última Oferta</h3>
-          <span class="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-medium px-2.5 py-0.5 rounded-full">86.5%</span>
-        </div>
-        
-        <div class="mb-4">
-          <div class="flex justify-between text-sm mb-2">
-            <span class="theme-text-secondary">$98,500</span>
-            <span class="theme-text-secondary">$122,900</span>
-          </div>
-          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div class="bg-green-600 dark:bg-green-400 h-2 rounded-full transition-all duration-500" style="width: 86.5%"></div>
-          </div>
-        </div>
-        
-        <p class="text-sm mb-4 theme-text-secondary">Cupones usados: 18/22</p>
-        
-        <div class="flex items-center space-x-2">
-          <span class="text-sm theme-text-secondary">Compradores recientes:</span>
-          <div class="flex -space-x-2">
-            <div class="w-8 h-8 bg-blue-500 rounded-full border-2 theme-border"></div>
-            <div class="w-8 h-8 bg-green-500 rounded-full border-2 theme-border"></div>
-            <div class="w-8 h-8 bg-yellow-500 rounded-full border-2 theme-border"></div>
-            <div class="w-8 h-8 bg-purple-500 rounded-full border-2 theme-border"></div>
-          </div>
-        </div>
-      </div>
+      <!-- Eliminado: Última Oferta -->
 
       <!-- Clientes -->
       <div class="card">
@@ -345,7 +274,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 definePageMeta({
   layout: 'admin',
   // sin middleware; lo maneja admin.global + SSR
@@ -369,6 +298,26 @@ const dashboardStats = ref({
   weeklyOrders: 0
 })
 
+// Ventas semanales
+const weeklySeries = ref<{ date: string; sales: number }[]>([])
+const weeklyTotal = computed(() => weeklySeries.value.reduce((s, d) => s + d.sales, 0))
+
+// Stats de productos
+const productsStats = ref<{ totalProducts: number; newProducts: number }>({ totalProducts: 0, newProducts: 0 })
+const productsPercent = computed(() => {
+  const total = productsStats.value.totalProducts || 1
+  const pct = Math.round((productsStats.value.newProducts / total) * 100)
+  return isNaN(pct) ? 0 : pct
+})
+const pieClip = computed(() => {
+  const deg = Math.round((productsPercent.value / 100) * 360)
+  // aproximación simple para clip-path del donut
+  return `clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 50% 0%); transform: rotate(${deg}deg);`
+})
+
+// Actividad reciente
+const recentActivity = ref<any[]>([])
+
 // Función para formatear moneda
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('es-ES', {
@@ -386,15 +335,70 @@ const loadDashboardStats = async () => {
       dashboardStats.value.totalProducts = data.data.totalProducts || 0
       dashboardStats.value.totalOrders = data.data.totalOrders || 0
       dashboardStats.value.totalRevenue = data.data.totalRevenue || 0
+      dashboardStats.value.weeklySales = data.data.weeklySales || 0
+      dashboardStats.value.newProducts = data.data.newProducts || 0
+      dashboardStats.value.weeklyOrders = data.data.weeklyOrders || 0
+      dashboardStats.value.totalCustomers = data.data.totalCustomers || 0
     }
   } catch (error) {
     console.error('Error cargando estadísticas del dashboard:', error)
   }
 }
 
+const loadWeeklySales = async () => {
+  try {
+    const { data } = await $fetch('/api/orders/weekly')
+    if (data?.success) {
+      weeklySeries.value = data.data.series || []
+    }
+  } catch (e) {
+    console.error('Error cargando ventas semanales:', e)
+  }
+}
+
+const loadProductsStats = async () => {
+  try {
+    const { data } = await $fetch('/api/products/stats')
+    if (data?.success) {
+      productsStats.value = data.data
+    }
+  } catch (e) {
+    console.error('Error cargando stats de productos:', e)
+  }
+}
+
+const loadRecentActivity = async () => {
+  try {
+    const { data } = await $fetch('/api/activity/recent')
+    if (data?.success) {
+      recentActivity.value = data.data
+    }
+  } catch (e) {
+    console.error('Error cargando actividad reciente:', e)
+  }
+}
+
+const reloadActivity = async () => {
+  await loadRecentActivity()
+}
+
+const formatDay = (dateStr: string) => {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('es-ES', { weekday: 'short' })
+}
+
+const barWidth = (value: number) => {
+  const max = Math.max(...weeklySeries.value.map(d => d.sales), 1)
+  const pct = Math.round((value / max) * 100)
+  return `${pct}%`
+}
+
 // Cargar datos al montar el componente
 onMounted(() => {
   initTheme() // Inicializar tema
   loadDashboardStats()
+  loadWeeklySales()
+  loadProductsStats()
+  loadRecentActivity()
 })
 </script>
