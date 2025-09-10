@@ -211,59 +211,7 @@
       </div>
     </div>
 
-    <!-- Actividad Reciente -->
-    <div class="card">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-bold theme-text-primary">Actividad Reciente</h3>
-        <button class="text-sm font-medium transition-colors theme-accent-button">Ver todo</button>
-      </div>
-      
-      <div class="space-y-4">
-        <div class="flex items-center space-x-4 p-4 rounded-xl transition-colors theme-activity-item">
-          <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-            <Icon name="heroicons:plus-circle" class="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div class="flex-1">
-            <p class="font-medium theme-text-primary">Nuevo producto agregado</p>
-            <p class="text-sm theme-text-secondary">"iPhone 15 Pro" fue agregado al catálogo</p>
-          </div>
-          <span class="text-sm theme-text-muted">Hace 2 horas</span>
-        </div>
-
-        <div class="flex items-center space-x-4 p-4 rounded-xl transition-colors theme-activity-item">
-          <div class="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-            <Icon name="heroicons:user-plus" class="w-5 h-5 text-green-600 dark:text-green-400" />
-          </div>
-          <div class="flex-1">
-            <p class="font-medium theme-text-primary">Nuevo cliente registrado</p>
-            <p class="text-sm theme-text-secondary">María González se registró en el sistema</p>
-          </div>
-          <span class="text-sm theme-text-muted">Hace 4 horas</span>
-        </div>
-
-        <div class="flex items-center space-x-4 p-4 rounded-xl transition-colors theme-activity-item">
-          <div class="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
-            <Icon name="heroicons:shopping-bag" class="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-          </div>
-          <div class="flex-1">
-            <p class="font-medium theme-text-primary">Nueva orden recibida</p>
-            <p class="text-sm theme-text-secondary">Orden #1234 por $299.99</p>
-          </div>
-          <span class="text-sm theme-text-muted">Hace 6 horas</span>
-        </div>
-
-        <div class="flex items-center space-x-4 p-4 rounded-xl transition-colors theme-activity-item">
-          <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
-            <Icon name="heroicons:currency-dollar" class="w-5 h-5 text-purple-600 dark:text-purple-400" />
-          </div>
-          <div class="flex-1">
-            <p class="font-medium theme-text-primary">Pago procesado</p>
-            <p class="text-sm theme-text-secondary">Pago de $149.99 confirmado</p>
-          </div>
-          <span class="text-sm theme-text-muted">Hace 8 horas</span>
-        </div>
-      </div>
-    </div>
+    <!-- (Se eliminó la sección de Actividad Reciente) -->
 
     <!-- Botón flotante de configuración -->
     <div class="fixed bottom-6 right-6">
