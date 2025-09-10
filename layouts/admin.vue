@@ -9,9 +9,9 @@
       <nav class="mt-8 flex-1 overflow-y-auto">
         <div class="px-4 space-y-2">
           <NuxtLink 
-            to="/admin" 
+            to="/dashboard" 
             class="flex items-center px-4 py-2 rounded-lg transition-colors theme-nav-item"
-            :class="{ 'theme-nav-active': $route.path === '/admin' }"
+            :class="{ 'theme-nav-active': $route.path === '/dashboard' }"
           >
             <Icon name="heroicons:home" class="w-5 h-5 mr-3" />
             Dashboard

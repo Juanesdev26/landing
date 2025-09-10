@@ -12,6 +12,7 @@ export default defineNuxtPlugin(() => {
   let isInactive = false
   let inactivityTimer: NodeJS.Timeout | null = null
   let lastActivity = Date.now()
+  let reactivationInProgress = false
   
   // Configuración
   const INACTIVITY_TIMEOUT = 5 * 60 * 1000 // 5 minutos
@@ -25,48 +26,65 @@ export default defineNuxtPlugin(() => {
   // Función para reactivar la página
   const reactivatePage = async () => {
     if (!needsReactivation()) return
+    if (reactivationInProgress) return
+    reactivationInProgress = true
     
     console.log('🔄 Reactivando página tras inactividad...')
     
+    // Helper para reemplazos seguros sin spamear errores por navegación redundante
+    const safeReplace = async (location: any) => {
+      try {
+        await router.replace(location)
+      } catch (err: any) {
+        const msg = String(err?.message || '')
+        if (msg.includes('Avoided redundant navigation')) return
+        console.warn('router.replace error:', err)
+      }
+    }
+    
     try {
-      // 1. Verificar sesión de Supabase
-      const { data: { session }, error } = await supabase.auth.getSession()
-      if (error) {
-        console.warn('⚠️ Error verificando sesión:', error)
-        return
+      // 1. Verificar sesión de Supabase (no bloquear si falla)
+      try {
+        await supabase.auth.getSession()
+      } catch (e) {
+        console.warn('⚠️ Error verificando sesión:', e)
       }
       
       // 2. Forzar re-renderizado de la página actual
       const currentRoute = router.currentRoute.value
       
-      // Usar un query param temporal para forzar re-render
+      // Usar un query param temporal para forzar re-render solo si no existe
+      const hasReactivation = '_reactivate' in (currentRoute.query || {})
       const tempQuery = { ...currentRoute.query, _reactivate: Date.now().toString() }
       
-      await router.replace({
-        path: currentRoute.path,
-        query: tempQuery
-      })
-      
-      // Limpiar el query param después de un tick
-      await nextTick()
+      if (!hasReactivation) {
+        await safeReplace({ path: currentRoute.path, query: tempQuery })
+        // Limpiar el query param después de un tick
+        await nextTick()
+      }
       
       setTimeout(async () => {
-        const { _reactivate, ...cleanQuery } = tempQuery
-        
-        await router.replace({
-          path: currentRoute.path,
-          query: Object.keys(cleanQuery).length > 0 ? cleanQuery : undefined
-        })
+        try {
+          const routeNow = router.currentRoute.value
+          if ('_reactivate' in (routeNow.query || {})) {
+            const { _reactivate, ...cleanQuery } = routeNow.query as Record<string, string>
+            await safeReplace({
+              path: routeNow.path,
+              query: Object.keys(cleanQuery).length > 0 ? cleanQuery : undefined
+            })
+          }
+        } finally {
+          // 3. Reinicializar estado de actividad
+          isInactive = false
+          lastActivity = Date.now()
+          reactivationInProgress = false
+          console.log('✅ Página reactivada correctamente')
+        }
       }, 100)
-      
-      // 3. Reinicializar estado de actividad
-      isInactive = false
-      lastActivity = Date.now()
-      
-      console.log('✅ Página reactivada correctamente')
       
     } catch (error) {
       console.error('❌ Error reactivando página:', error)
+      reactivationInProgress = false
     }
   }
   

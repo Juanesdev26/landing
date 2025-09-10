@@ -6,8 +6,8 @@
 definePageMeta({
   layout: false
 })
-
-await navigateTo('/admin', { redirectCode: 301 })
+// Evitar congelamiento por redirecciones 301 persistentes: usar replace en cliente
+await navigateTo('/admin', { replace: true })
 </script>
 
 

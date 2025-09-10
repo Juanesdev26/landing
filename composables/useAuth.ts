@@ -120,7 +120,7 @@ export const useAuth = () => {
       // Verificar sesión de Supabase con timeout
       const sessionPromise = supabase.auth.getSession()
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        setTimeout(() => reject(new Error('Session check timeout')), 10000)
       )
       
       const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any
@@ -137,7 +137,7 @@ export const useAuth = () => {
         .single()
       
       const profileTimeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
       )
       
       const { data: profile, error: profileError } = await Promise.race([profilePromise, profileTimeoutPromise]) as any
