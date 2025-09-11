@@ -8,13 +8,6 @@
       </div>
       <div class="flex space-x-3">
         <button
-          @click="openMovementModal"
-          class="btn btn-primary flex items-center space-x-2"
-        >
-          <Icon name="heroicons:plus-circle" class="w-5 h-5" />
-          <span>Nuevo Movimiento</span>
-        </button>
-        <button
           @click="openAdjustmentModal"
           class="btn btn-primary flex items-center space-x-2"
         >
@@ -239,13 +232,6 @@
                     <Icon name="heroicons:eye" class="w-5 h-5" />
                   </button>
                   <button
-                    @click="openMovementModal(product)"
-                    class="text-green-600 hover:text-green-900"
-                    title="Agregar movimiento"
-                  >
-                    <Icon name="heroicons:plus-circle" class="w-5 h-5" />
-                  </button>
-                  <button
                     @click="openAdjustmentModal(product)"
                     class="text-orange-600 hover:text-orange-900"
                     title="Ajustar stock"
@@ -320,14 +306,6 @@
       </div>
     </div>
 
-    <!-- Modal para movimientos de inventario -->
-    <InventoryMovementModal
-      v-if="showMovementModal"
-      :product="selectedProduct"
-      @close="closeMovementModal"
-      @save="saveMovement"
-    />
-
     <!-- Modal para ajustes de stock -->
     <StockAdjustmentModal
       v-if="showAdjustmentModal"
@@ -362,7 +340,6 @@ const selectedStockStatus = ref('')
 const selectedProvider = ref('')
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
-const showMovementModal = ref(false)
 const showAdjustmentModal = ref(false)
 const showMovementsModal = ref(false)
 const selectedProduct = ref(null)
@@ -471,16 +448,6 @@ const fetchProviders = async () => {
   }
 }
 
-const openMovementModal = (product = null) => {
-  selectedProduct.value = product
-  showMovementModal.value = true
-}
-
-const closeMovementModal = () => {
-  showMovementModal.value = false
-  selectedProduct.value = null
-}
-
 const openAdjustmentModal = (product = null) => {
   selectedProduct.value = product
   showAdjustmentModal.value = true
@@ -501,23 +468,6 @@ const closeMovementsModal = () => {
   selectedProduct.value = null
 }
 
-const saveMovement = async (movementData) => {
-  try {
-    const { data } = await $fetch('/api/inventory/movements', {
-      method: 'POST',
-      body: movementData
-    })
-    if (data.success) {
-      console.log('Movimiento registrado exitosamente')
-      await fetchInventory()
-      closeMovementModal()
-    } else {
-      console.error('Error registrando movimiento:', data.error)
-    }
-  } catch (error) {
-    console.error('Error saving movement:', error)
-  }
-}
 
 const saveAdjustment = async (adjustmentData) => {
   try {

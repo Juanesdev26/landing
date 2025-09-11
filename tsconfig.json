@@ -12,6 +12,9 @@
     "strict": true,
     "noEmit": true,
     "forceConsistentCasingInFileNames": true
+  },
+  "vueCompilerOptions": {
+    "strictTemplates": false
   }
 }
 

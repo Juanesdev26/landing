@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-3xl font-bold mb-2 transition-colors theme-text-primary">Dashboard</h1>
-          <p class="transition-colors theme-text-secondary">Bienvenido de vuelta, {{ userProfile?.first_name || 'Admin' }}! Aquí tienes un resumen de tu negocio.</p>
+          <p class="transition-colors theme-text-secondary">Bienvenido de vuelta, {{ userName || 'Admin' }}! Aquí tienes un resumen de tu negocio.</p>
         </div>
         <div class="flex items-center space-x-4"></div>
       </div>
@@ -133,15 +133,11 @@
           </div>
         </div>
         
-        <!-- Gráfico circular simple: porcentaje nuevos/total -->
+        <!-- Gráfico circular simple (componente) -->
         <div class="flex items-center justify-center mb-4">
-          <div class="relative w-32 h-32">
-            <div class="w-32 h-32 rounded-full border-8 border-gray-200 dark:border-gray-700"></div>
-            <div class="absolute inset-0 w-32 h-32 rounded-full border-8 border-blue-600 dark:border-blue-400" :style="pieClip"></div>
-            <div class="absolute inset-0 flex items-center justify-center">
-              <span class="text-2xl font-bold theme-text-primary">{{ productsPercent }}%</span>
-            </div>
-          </div>
+          <DonutRing :percent="productsPercent" :size="128" :stroke="16" color="#2563eb" track-color="#374151">
+            <span class="text-2xl font-bold theme-text-primary">{{ percentNumber() }}%</span>
+          </DonutRing>
         </div>
         
         <p class="text-center text-sm theme-text-secondary">{{ productsStats.newProducts }} nuevos de {{ productsStats.totalProducts }}</p>
@@ -223,13 +219,14 @@
 </template>
 
 <script setup lang="ts">
+import DonutRing from '~/components/common/DonutRing.vue'
 definePageMeta({
   layout: 'admin',
   // sin middleware; lo maneja admin.global + SSR
 })
 
 const { user } = useAuth()
-const userProfile = computed(() => user.value)
+const userName = computed(() => user.value?.name || null)
 
 // Composable para manejar el tema
 const { theme, isDark, toggleTheme, initTheme } = useTheme()
@@ -252,22 +249,19 @@ const weeklyTotal = computed(() => weeklySeries.value.reduce((s, d) => s + d.sal
 
 // Stats de productos
 const productsStats = ref<{ totalProducts: number; newProducts: number }>({ totalProducts: 0, newProducts: 0 })
-const productsPercent = computed(() => {
+const productsPercent = computed<number>(() => {
   const total = productsStats.value.totalProducts || 1
   const pct = Math.round((productsStats.value.newProducts / total) * 100)
   return isNaN(pct) ? 0 : pct
 })
-const pieClip = computed(() => {
-  const deg = Math.round((productsPercent.value / 100) * 360)
-  // aproximación simple para clip-path del donut
-  return `clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 50% 0%); transform: rotate(${deg}deg);`
-})
+const percentNumber = () => productsPercent.value
+// (sin computeds para estilos inline)
 
 // Actividad reciente
 const recentActivity = ref<any[]>([])
 
 // Función para formatear moneda
-const formatCurrency = (amount) => {
+const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('es-ES', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
@@ -275,18 +269,21 @@ const formatCurrency = (amount) => {
 }
 
 // Cargar estadísticas del dashboard
+type ApiResponse<T> = { success: true; data: T } | { success: false; error: string; message?: string }
+
 const loadDashboardStats = async () => {
   try {
-    const { data } = await $fetch('/api/dashboard')
-    if (data?.success) {
-      dashboardStats.value.totalUsers = data.data.totalUsers || 0
-      dashboardStats.value.totalProducts = data.data.totalProducts || 0
-      dashboardStats.value.totalOrders = data.data.totalOrders || 0
-      dashboardStats.value.totalRevenue = data.data.totalRevenue || 0
-      dashboardStats.value.weeklySales = data.data.weeklySales || 0
-      dashboardStats.value.newProducts = data.data.newProducts || 0
-      dashboardStats.value.weeklyOrders = data.data.weeklyOrders || 0
-      dashboardStats.value.totalCustomers = data.data.totalCustomers || 0
+    const resp: any = await $fetch('/api/dashboard')
+    if (resp?.data?.success) {
+      const payload = resp.data.data || {}
+      dashboardStats.value.totalUsers = payload.totalUsers || 0
+      dashboardStats.value.totalProducts = payload.totalProducts || 0
+      dashboardStats.value.totalOrders = payload.totalOrders || 0
+      dashboardStats.value.totalRevenue = payload.totalRevenue || 0
+      dashboardStats.value.weeklySales = payload.weeklySales || 0
+      dashboardStats.value.newProducts = payload.newProducts || 0
+      dashboardStats.value.weeklyOrders = payload.weeklyOrders || 0
+      dashboardStats.value.totalCustomers = payload.totalCustomers || 0
     }
   } catch (error) {
     console.error('Error cargando estadísticas del dashboard:', error)
@@ -295,9 +292,10 @@ const loadDashboardStats = async () => {
 
 const loadWeeklySales = async () => {
   try {
-    const { data } = await $fetch('/api/orders/weekly')
-    if (data?.success) {
-      weeklySeries.value = data.data.series || []
+    const resp: any = await $fetch('/api/orders/weekly')
+    if (resp?.data?.success) {
+      const payload = resp.data.data || {}
+      weeklySeries.value = payload.series || []
     }
   } catch (e) {
     console.error('Error cargando ventas semanales:', e)
@@ -306,9 +304,10 @@ const loadWeeklySales = async () => {
 
 const loadProductsStats = async () => {
   try {
-    const { data } = await $fetch('/api/products/stats')
-    if (data?.success) {
-      productsStats.value = data.data
+    const resp: any = await $fetch('/api/products/stats')
+    if (resp?.data?.success) {
+      const payload = resp.data.data || {}
+      productsStats.value = payload
     }
   } catch (e) {
     console.error('Error cargando stats de productos:', e)
@@ -317,9 +316,10 @@ const loadProductsStats = async () => {
 
 const loadRecentActivity = async () => {
   try {
-    const { data } = await $fetch('/api/activity/recent')
-    if (data?.success) {
-      recentActivity.value = data.data
+    const resp: any = await $fetch('/api/activity/recent')
+    if (resp?.data?.success) {
+      const payload = resp.data.data || []
+      recentActivity.value = payload
     }
   } catch (e) {
     console.error('Error cargando actividad reciente:', e)
