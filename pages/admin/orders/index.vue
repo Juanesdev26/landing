@@ -265,42 +265,37 @@
                 {{ formatDate(row.created_at) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div class="flex space-x-2">
+                <div class="flex flex-wrap gap-2">
+                  <!-- Aprobar -->
                   <button
-                    v-if="row._isReservation && row.status === 'pending'"
-                    @click="approveReservation(row._rawReservation)"
-                    class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
-                    title="Aprobar pedido"
+                    :disabled="!canApprove(row)"
+                    @click="onApprove(row)"
+                    :title="row._isReservation ? 'Aprobar (desde reserva)' : 'Aprobar pedido'"
+                    aria-label="Aprobar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <Icon name="heroicons:check-circle" class="w-5 h-5 mr-1" />
-                    Aprobar pedido
+                    <Icon name="heroicons:check-circle" class="w-5 h-5" />
                   </button>
+
+                  <!-- Cancelar -->
                   <button
-                    v-if="row._isReservation && row.status === 'pending'"
-                    @click="cancelReservation(row._rawReservation)"
-                    class="inline-flex items-center px-3 py-1.5 rounded border hover:bg-gray-50"
+                    :disabled="!canCancel(row)"
+                    @click="onCancel(row)"
                     title="Cancelar"
+                    aria-label="Cancelar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded border hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <Icon name="heroicons:trash" class="w-5 h-5 mr-1" />
-                    Cancelar
+                    <Icon name="heroicons:x-circle" class="w-5 h-5 text-red-600" />
                   </button>
+
+                  <!-- Eliminar -->
                   <button
-                    v-if="!row._isReservation && row.status === 'pending'"
-                    @click="approveOrder(row)"
-                    class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
-                    title="Aprobar pedido"
+                    @click="onDelete(row)"
+                    title="Eliminar"
+                    aria-label="Eliminar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded border hover:bg-gray-50"
                   >
-                    <Icon name="heroicons:check-circle" class="w-5 h-5 mr-1" />
-                    Aprobar pedido
-                  </button>
-                  <button
-                    v-if="!row._isReservation && (row.status === 'pending' || row.status === 'confirmed')"
-                    @click="confirmDelete(row)"
-                    class="inline-flex items-center px-3 py-1.5 rounded border hover:bg-gray-50"
-                    title="Eliminar pedido"
-                  >
-                    <Icon name="heroicons:trash" class="w-5 h-5 mr-1" />
-                    Eliminar
+                    <Icon name="heroicons:trash" class="w-5 h-5" />
                   </button>
                 </div>
               </td>
@@ -402,6 +397,14 @@
       @confirm="deleteOrder"
       @cancel="showConfirmModal = false"
     />
+    <!-- Modal de confirmación para eliminar reserva -->
+    <ConfirmModal
+      v-if="showReservationConfirmModal"
+      title="Eliminar Apartado"
+      message="¿Estás seguro de que quieres eliminar este apartado? Esta acción no se puede deshacer."
+      @confirm="deleteReservation"
+      @cancel="showReservationConfirmModal = false"
+    />
   </div>
 </template>
 
@@ -427,6 +430,8 @@ const showPaymentModal = ref(false)
 const showConfirmModal = ref(false)
 const selectedOrder = ref(null)
 const orderToDelete = ref(null)
+const showReservationConfirmModal = ref(false)
+const reservationToDelete = ref(null)
 
 // Computed properties
 const filteredOrders = computed(() => {
@@ -693,11 +698,29 @@ const approveOrder = async (order) => {
     if (res?.data?.success) {
       $toast?.success('Pedido aprobado')
       await fetchOrders()
+      await fetchOrderStats()
     } else {
       $toast?.error('Error', res?.data?.error || 'No fue posible aprobar el pedido')
     }
   } catch (error) {
     $toast?.error('Error', 'No fue posible aprobar el pedido')
+  }
+}
+
+const cancelOrder = async (order) => {
+  const ok = confirm('Cancelar este pedido? (si está pendiente se restaurará el stock)')
+  if (!ok) return
+  try {
+    const res = await $fetch(`/api/orders/${order.id_order}/update-status`, { method: 'PATCH', body: { status: 'cancelled' } })
+    if (res?.data?.success) {
+      $toast?.success('Pedido cancelado')
+      await fetchOrders()
+      await fetchOrderStats()
+    } else {
+      $toast?.error('Error', res?.data?.error || 'No fue posible cancelar el pedido')
+    }
+  } catch (e) {
+    $toast?.error('Error', 'No fue posible cancelar el pedido')
   }
 }
 
@@ -815,13 +838,13 @@ const createOrderFromReservation = async (r) => {
     if (data.success) {
       await fetchOrders()
       await fetchReservations()
-      alert('Pedido creado desde apartado')
+      $toast?.success('Pedido creado desde apartado')
     } else {
-      alert(data.error || 'Error creando pedido desde apartado')
+      $toast?.error('Error', data.error || 'Error creando pedido desde apartado')
     }
   } catch (error) {
     console.error('Error creating order from reservation:', error)
-    alert('Error creando pedido')
+    $toast?.error('Error', 'Error creando pedido')
   }
 }
 const cancelReservation = async (r) => {
@@ -831,11 +854,13 @@ const cancelReservation = async (r) => {
     const { data } = await $fetch(`/api/reservations/${r.id_reservation}/cancel`, { method: 'PATCH' })
     if (data.success) {
       await fetchReservations()
+      $toast?.success('Apartado cancelado')
     } else {
-      alert(data.error || 'Error cancelando apartado')
+      $toast?.error('Error', data.error || 'Error cancelando apartado')
     }
   } catch (error) {
     console.error('Error cancelando apartado:', error)
+    $toast?.error('Error', 'No fue posible cancelar el apartado')
   }
 }
 const approveReservation = async (r) => {
@@ -854,14 +879,47 @@ const approveReservation = async (r) => {
     $toast?.error('Error', 'No fue posible aprobar el pedido')
   }
 }
-const deleteReservation = async (r) => {
-  const ok = confirm('Eliminar este registro de apartado?')
-  if (!ok) return
+
+// Helpers para acciones por fila (mostrar solo iconos y controlar disponibilidad)
+const canApprove = (row) => {
+  if (row._isReservation) return row.status === 'pending'
+  return row.status === 'pending'
+}
+const canCancel = (row) => {
+  if (row._isReservation) return row.status === 'pending'
+  return row.status === 'pending'
+}
+
+const onApprove = async (row) => {
+  if (row._isReservation) return approveReservation(row._rawReservation)
+  return approveOrder(row)
+}
+
+const onCancel = async (row) => {
+  if (row._isReservation) return cancelReservation(row._rawReservation)
+  return cancelOrder(row)
+}
+
+const onDelete = async (row) => {
+  if (row._isReservation) return confirmDeleteReservation(row._rawReservation)
+  return confirmDelete(row)
+}
+
+const confirmDeleteReservation = (r) => {
+  reservationToDelete.value = r
+  showReservationConfirmModal.value = true
+}
+
+const deleteReservation = async () => {
+  const r = reservationToDelete.value
+  if (!r) return
   try {
     const { data } = await $fetch(`/api/reservations/${r.id_reservation}`, { method: 'DELETE' })
     if (data.success) {
       $toast?.success('Registro eliminado')
       await fetchReservations()
+      showReservationConfirmModal.value = false
+      reservationToDelete.value = null
     } else {
       $toast?.error('Error', data.error)
     }

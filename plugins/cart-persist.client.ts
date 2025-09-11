@@ -68,6 +68,58 @@ export default defineNuxtPlugin((nuxtApp) => {
         }
       }, { detached: true })
 
+      // Realtime: limpiar carrito si el admin elimina un pedido del usuario
+      let ordersChannel: any = null
+      let itemsChannel: any = null
+      const subscribeOrdersDeletes = async () => {
+        try {
+          const { data: sess } = await supabase.auth.getSession()
+          const hasSession = Boolean(sess?.session?.user?.id)
+          if (!hasSession) return
+          const resp: any = await $fetch('/api/customers/my')
+          const idCustomer = resp?.data?.success ? resp.data.data?.id_customer : null
+          if (!idCustomer) return
+          if (ordersChannel) try { supabase.removeChannel(ordersChannel) } catch {}
+          ordersChannel = (supabase as any)
+            .channel(`orders-deletes-${idCustomer}`)
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'orders', filter: `customer_id=eq.${idCustomer}` }, (_payload: any) => {
+              try {
+                // Vaciar carrito local en el dispositivo del usuario
+                const key = getKey(currentUid)
+                store.$patch({ items: [], taxAmount: 0, shippingAmount: 0 })
+                localStorage.setItem(key, JSON.stringify({ items: [], taxAmount: 0, shippingAmount: 0 }))
+              } catch (e) {
+                console.error('Error clearing cart after order delete', e)
+              }
+            })
+            .subscribe()
+          // Suscribirse a borrados de items del pedido para eliminar solo esos productos
+          if (itemsChannel) try { supabase.removeChannel(itemsChannel) } catch {}
+          itemsChannel = (supabase as any)
+            .channel(`order-items-deletes-${idCustomer}`)
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'order_items' }, (payload: any) => {
+              try {
+                const oldRow = payload?.old || {}
+                const productId = oldRow.product_id as string | undefined
+                if (!productId) return
+                // Eliminar solo el producto afectado del carrito
+                store.removeItem(productId)
+                const key = getKey(currentUid)
+                localStorage.setItem(key, JSON.stringify({
+                  items: store.items,
+                  taxAmount: store.taxAmount,
+                  shippingAmount: store.shippingAmount
+                }))
+              } catch (e) {
+                console.error('Error removing product from cart after item delete', e)
+              }
+            })
+            .subscribe()
+        } catch (e) {
+          // Silencioso
+        }
+      }
+
       // When auth state changes, reload the proper cart for that user and clear the old state
       supabase.auth.onAuthStateChange(async (event: string, session: any) => {
         try {
@@ -90,8 +142,25 @@ export default defineNuxtPlugin((nuxtApp) => {
           console.error('Error merging carts on sign-in', e)
         } finally {
           await loadForUser()
+          await subscribeOrdersDeletes()
+        }
+        if (event === 'SIGNED_OUT') {
+          try { if (ordersChannel) supabase.removeChannel(ordersChannel) } catch {}
+          try { if (itemsChannel) supabase.removeChannel(itemsChannel) } catch {}
+          ordersChannel = null
+          itemsChannel = null
+          currentUid = null
+          await loadForUser()
         }
       })
+
+      // Suscribirse inicialmente sólo si ya hay sesión
+      ;(async () => {
+        try {
+          const { data: sess } = await supabase.auth.getSession()
+          if (sess?.session?.user?.id) await subscribeOrdersDeletes()
+        } catch {}
+      })()
     }
   })
 })
