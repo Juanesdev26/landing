@@ -100,14 +100,20 @@ export default defineNuxtPlugin(async () => {
       } catch (_e) {}
     } else if (event === 'SIGNED_OUT') {
       if (import.meta.env.DEV) console.log('🚪 Usuario cerró sesión')
-      // Redirigir a inicio una sola vez, esperando router y estilos
+      // Limpiar estado local en caso de que no se haya usado useAuth().logout()
+      try {
+        const auth = useAuth() as any
+        // limpiar estado usando la API pública
+        await auth.logout?.()
+      } catch (_e) {}
+      // Redirigir a login una sola vez, esperando router y estilos
       try {
         try { await router.isReady() } catch {}
         if (document.readyState !== 'complete') {
           await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
         }
         await nextTick()
-        if (router.currentRoute.value.path !== '/') await router.replace('/')
+        if (router.currentRoute.value.path !== '/login') await router.replace('/login')
       } catch (_e) {}
     }
   })

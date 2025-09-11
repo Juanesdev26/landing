@@ -70,11 +70,13 @@ export default defineEventHandler(async (event) => {
               id_product,
               name,
               sku,
-              image_url
+              image_url,
+              price
             )
           )
         `)
         .order('created_at', { ascending: false })
+        .limit(500)
 
       if (error) {
         console.error('Error obteniendo pedidos:', error)
@@ -93,9 +95,9 @@ export default defineEventHandler(async (event) => {
         customer_name: order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'Cliente no encontrado',
         customer_email: order.customer?.email || 'N/A',
         customer_phone: order.customer?.phone || 'N/A',
-        items_count: order.order_items?.length || 0,
-        total_amount: order.total_amount || 0,
-        subtotal: order.subtotal || 0
+        items_count: (order.order_items || []).reduce((n, it: any) => n + Number(it.quantity || 0), 0),
+        total_amount: Number(order.total_amount || (order.order_items || []).reduce((s, it: any) => s + Number(it.total_price || (Number(it.quantity || 0) * Number(it.unit_price || 0))), 0)),
+        subtotal: Number(order.subtotal || 0)
       }))
 
       return respondSuccess(processedOrders)

@@ -26,7 +26,7 @@
 
     
     <!-- Resumen de pedidos -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
       <div class="bg-white p-6 rounded-lg shadow-sm">
         <div class="flex items-center">
           <div class="flex-shrink-0">
@@ -79,6 +79,19 @@
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-500">Cancelados</p>
             <p class="text-2xl font-bold text-gray-900">{{ ordersSummary.cancelled }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-sm">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <Icon name="heroicons:banknotes" class="w-5 h-5 text-emerald-600" />
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Pagados</p>
+            <p class="text-2xl font-bold text-gray-900">{{ ordersSummary.paid }}</p>
           </div>
         </div>
       </div>
@@ -208,7 +221,7 @@
                     </div>
                   </div>
                   <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">#{{ (row.id_order || '').slice(0, 8) }}</div>
+                    <div class="text-sm font-medium text-gray-900">#{{ String(row.id_order || '').slice(0, 8) }}</div>
                     <div class="text-sm text-gray-500">{{ row.tracking_number || (row._isReservation ? 'Reserva' : 'Sin tracking') }}</div>
                   </div>
                 </div>
@@ -438,7 +451,7 @@ const filteredOrders = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(order =>
-      order.id_order.toLowerCase().includes(query) ||
+      String(order.id_order).toLowerCase().includes(query) ||
       (order.tracking_number && order.tracking_number.toLowerCase().includes(query)) ||
       (order.customer?.first_name && order.customer.first_name.toLowerCase().includes(query)) ||
       (order.customer?.last_name && order.customer.last_name.toLowerCase().includes(query))
@@ -498,14 +511,7 @@ const visiblePages = computed(() => {
   return pages
 })
 
-const ordersSummary = computed(() => {
-  const total = orders.value.length
-  const pending = orders.value.filter(o => o.status === 'pending').length
-  const delivered = orders.value.filter(o => o.status === 'delivered').length
-  const cancelled = orders.value.filter(o => o.status === 'cancelled').length
-
-  return { total, pending, delivered, cancelled }
-})
+const ordersSummary = ref({ total: 0, pending: 0, delivered: 0, cancelled: 0, paid: 0 })
 
 // Métodos
 const fetchOrders = async () => {
@@ -521,6 +527,37 @@ const fetchOrders = async () => {
     console.error('Error fetching orders:', error)
   } finally {
     loading.value = false
+  }
+}
+
+const fetchOrderStats = async () => {
+  try {
+    // Endpoint liviano para tarjetas
+    const { data } = await $fetch('/api/orders/summary')
+    if (data?.success) {
+      ordersSummary.value.total = Number(data.data?.total || 0)
+      ordersSummary.value.pending = Number(data.data?.pending || 0)
+      ordersSummary.value.delivered = Number(data.data?.delivered || 0)
+      ordersSummary.value.cancelled = Number(data.data?.cancelled || 0)
+      ordersSummary.value.paid = Number(data.data?.paid || 0)
+      ordersSummary.value.paid = Number(data.data?.paid || 0) // Nuevo campo
+    } else {
+      // Fallback: calcular desde la lista si el endpoint falla
+      ordersSummary.value.total = orders.value.length
+      ordersSummary.value.pending = orders.value.filter(o => o.status === 'pending').length
+      ordersSummary.value.delivered = orders.value.filter(o => o.status === 'delivered').length
+      ordersSummary.value.cancelled = orders.value.filter(o => o.status === 'cancelled').length
+      ordersSummary.value.paid = orders.value.filter(o => o.payment_status === 'paid').length
+      ordersSummary.value.paid = orders.value.filter(o => o.payment_status === 'paid').length // Fallback para paid
+    }
+  } catch (e) {
+    console.error('Error fetching order stats:', e)
+    ordersSummary.value.total = orders.value.length
+    ordersSummary.value.pending = orders.value.filter(o => o.status === 'pending').length
+    ordersSummary.value.delivered = orders.value.filter(o => o.status === 'delivered').length
+    ordersSummary.value.cancelled = orders.value.filter(o => o.status === 'cancelled').length
+    ordersSummary.value.paid = orders.value.filter(o => o.payment_status === 'paid').length
+    ordersSummary.value.paid = orders.value.filter(o => o.payment_status === 'paid').length // Fallback para paid
   }
 }
 
@@ -879,6 +916,7 @@ const checkAuthentication = async () => {
 onMounted(async () => {
   await checkAuthentication()
   await fetchOrders()
+  await fetchOrderStats()
   await fetchReservations()
 })
 </script>

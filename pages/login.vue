@@ -203,13 +203,15 @@ const handleLogin = async () => {
 const loginWithGoogle = async () => {
   try {
     loading.value = true
-    const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
-    if (error) throw error
+    error.value = ''
+    // En flujos OAuth, no bloquear UI esperando respuesta; el evento onAuthStateChange manejará la redirección
+    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/login' } })
   } catch (e) {
     console.error('Google sign-in error', e)
     error.value = 'No se pudo iniciar sesión con Google'
   } finally {
-    loading.value = false
+    // Liberar el loading tras breve delay para permitir transición visual si no hay redirección inmediata
+    setTimeout(() => { loading.value = false }, 300)
   }
 }
 </script>

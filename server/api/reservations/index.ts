@@ -1,4 +1,5 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { requireAdmin, requireAuth, respondError, respondSuccess } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -8,23 +9,37 @@ export default defineEventHandler(async (event) => {
   if (method === 'GET') {
     try {
       await requireAdmin(event)
+      // Usar service role para evitar RLS en joins a profiles/products
+      const config = useRuntimeConfig()
+      const adminClient = createClient(
+        config.public.supabaseUrl,
+        config.supabaseServiceKey,
+        { auth: { persistSession: false } }
+      ) as any
+
+      const query = getQuery(event)
+      const statusFilter = (query.status as string | undefined) || undefined
+      const limit = Number(query.limit || 200)
+
       // Auto-cancelar vencidas
       const nowIso = new Date().toISOString()
-      await (supabase as any)
+      await adminClient
         .from('reservations')
         .update({ status: 'cancelled', updated_at: new Date().toISOString() })
         .lte('expires_at', nowIso)
         .eq('status', 'pending')
 
-      const { data, error } = await supabase
+      let builder = adminClient
         .from('reservations')
         .select(`
           *,
           user:profiles(id, email, first_name, last_name),
-          product:products(id_product, name, sku, image_url)
+          product:products(id_product, name, sku, image_url, price)
         `)
-        .eq('status', 'pending')
         .order('created_at', { ascending: false })
+        .limit(limit)
+      if (statusFilter) builder = builder.eq('status', statusFilter)
+      const { data, error } = await builder
       if (error) return respondError('Error obteniendo reservas', error.message)
       return respondSuccess(data)
     } catch (e) {
