@@ -135,7 +135,7 @@
         
         <!-- Gráfico circular simple (componente) -->
         <div class="flex items-center justify-center mb-4">
-          <DonutRing :percent="productsPercent" :size="128" :stroke="16" color="#2563eb" track-color="#374151">
+          <DonutRing :percent="percentNumber()" :size="128" :stroke="16" color="#2563eb" track-color="#374151">
             <span class="text-2xl font-bold theme-text-primary">{{ percentNumber() }}%</span>
           </DonutRing>
         </div>

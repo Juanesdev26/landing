@@ -74,11 +74,11 @@ export default defineNuxtPlugin(async () => {
     console.error('❌ Error verificando sesión:', error)
   }
   
-  // Escuchar cambios en la autenticación
+  // Escuchar cambios en la autenticación (incluye sesión inicial)
   supabase.auth.onAuthStateChange(async (event, session) => {
     console.log('🔄 Cambio de estado de autenticación:', event)
     
-    if (event === 'SIGNED_IN' && session) {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
       if (import.meta.env.DEV) console.log('✅ Usuario inició sesión:', session.user.email)
       // Upsert/upgrade profile to role 'user' after third-party login
       try {
@@ -96,7 +96,7 @@ export default defineNuxtPlugin(async () => {
         }
         await nextTick()
         if (role === 'admin') await router.replace('/dashboard')
-        else if (role === 'user') await router.replace('/user')
+        else if (role === 'user' || role === 'customer') await router.replace('/user')
       } catch (_e) {}
     } else if (event === 'SIGNED_OUT') {
       if (import.meta.env.DEV) console.log('🚪 Usuario cerró sesión')
