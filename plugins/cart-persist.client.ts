@@ -58,7 +58,7 @@ export default defineNuxtPlugin((nuxtApp) => {
         console.error('Error loading cart from localStorage', e)
       }
 
-      // Debounced save to prevent excessive localStorage writes
+      // Debounced save to prevent excessive localStorage writes (optimizado)
       let saveTimeout: NodeJS.Timeout | null = null
       const debouncedSave = (state: any) => {
         if (saveTimeout) clearTimeout(saveTimeout)
@@ -78,7 +78,7 @@ export default defineNuxtPlugin((nuxtApp) => {
           } catch (e) {
             console.error('Error saving cart to localStorage', e)
           }
-        }, 300) // 300ms debounce
+        }, 500) // Aumentar debounce a 500ms para reducir escrituras
       }
 
       const unsubscribe = store.$subscribe(async (_mutation: any, state: any) => {

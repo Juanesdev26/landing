@@ -11,8 +11,8 @@ export default defineNuxtPlugin(() => {
   
   if (import.meta.env.DEV) console.log('🔐 Plugin de autenticación iniciado')
   
-  // Helper: esperar hasta que el perfil exista y tenga rol
-  const waitForProfileRole = async (userId: string, maxMs = 3000) => {
+  // Helper: esperar hasta que el perfil exista y tenga rol (optimizado)
+  const waitForProfileRole = async (userId: string, maxMs = 2000) => {
     const start = Date.now()
     let lastRole: string | null = null
     while (Date.now() - start < maxMs) {
@@ -28,62 +28,45 @@ export default defineNuxtPlugin(() => {
           break
         }
       } catch {}
-      await new Promise(r => setTimeout(r, 120))
+      await new Promise(r => setTimeout(r, 200)) // Reducir frecuencia de polling
     }
     return lastRole
   }
   
-  // Verificar sesión de Supabase al cargar la aplicación
+  // Verificar sesión de Supabase al cargar la aplicación (optimizado)
   const initAuth = async () => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession()
     
-    if (error) {
-      console.error('❌ Error obteniendo sesión:', error)
-      return
-    }
-    
-    if (session) {
-      if (import.meta.env.DEV) console.log('✅ Sesión encontrada para usuario:', session.user.email)
-      // Asegurar que el rol esté listo antes de redirigir
-      let ok = await checkAuth()
-      if (!ok) {
-        const roleReady = await waitForProfileRole(session.user.id)
-        if (roleReady) {
-          // refrescar auth para poblar estado
-          ok = await checkAuth()
-        }
+      if (error) {
+        console.error('❌ Error obteniendo sesión:', error)
+        return
       }
-      if (ok) {
-        try {
-          const role = (user.value?.role as unknown as string)
-          if (router.currentRoute.value.path === '/' || router.currentRoute.value.path === '/login') {
-        try { await router.isReady() } catch {}
-        if (document.readyState !== 'complete') {
-          await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
-        }
-        await nextTick()
+      
+      if (session) {
+        if (import.meta.env.DEV) console.log('✅ Sesión encontrada para usuario:', session.user.email)
         
-        // Verificar si estamos haciendo logout antes de redirigir
-        if (isLoggingOut) {
-          console.log('🚫 Ignorando redirección inicial por logout en progreso')
-          return
+        // Optimización: verificar auth solo una vez
+        const ok = await checkAuth()
+        if (ok) {
+          try {
+            const role = (user.value?.role as unknown as string)
+            // Solo redirigir si estamos en la página principal
+            if (router.currentRoute.value.path === '/') {
+              // Verificar si estamos haciendo logout antes de redirigir
+              if (isLoggingOut) {
+                console.log('🚫 Ignorando redirección inicial por logout en progreso')
+                return
+              }
+              
+              if (role === 'admin') await router.replace('/dashboard')
+              else if (role === 'user') await router.replace('/user')
+            }
+          } catch (_e) {}
         }
-        
-        // No redirigir si estamos en /login
-        if (router.currentRoute.value.path === '/login') {
-          console.log('🚫 Ignorando redirección inicial porque estamos en /login')
-          return
-        }
-        
-        if (role === 'admin') await router.replace('/dashboard')
-        else if (role === 'user') await router.replace('/user')
-          }
-        } catch (_e) {}
+      } else {
+        if (import.meta.env.DEV) console.log('ℹ️ No hay sesión activa')
       }
-    } else {
-      if (import.meta.env.DEV) console.log('ℹ️ No hay sesión activa')
-    }
     } catch (error) {
       console.error('❌ Error verificando sesión:', error)
     }
@@ -95,7 +78,7 @@ export default defineNuxtPlugin(() => {
   // Flag para controlar redirecciones automáticas
   let isLoggingOut = false
 
-  // Escuchar cambios en la autenticación (incluye sesión inicial)
+  // Escuchar cambios en la autenticación (optimizado)
   supabase.auth.onAuthStateChange(async (event, session) => {
     console.log('🔄 Cambio de estado de autenticación:', event)
     
@@ -113,16 +96,16 @@ export default defineNuxtPlugin(() => {
       }
       
       if (import.meta.env.DEV) console.log('✅ Usuario inició sesión:', session.user.email)
-      // Upsert/upgrade profile to role 'user' after third-party login
-      try {
-        await $fetch('/api/auth/upsert-profile', { method: 'POST' })
-      } catch (e) {
+      
+      // Optimización: hacer upsert de perfil de forma asíncrona sin bloquear
+      $fetch('/api/auth/upsert-profile', { method: 'POST' }).catch(e => {
         console.warn('No se pudo actualizar perfil tras login', e)
-      }
-      // Esperar a que el perfil tenga rol y luego redirigir
+      })
+      
+      // Optimización: verificar auth y redirigir de forma más eficiente
       try {
-        const role = (await waitForProfileRole(session.user.id)) || (user.value?.role as unknown as string)
         await checkAuth()
+        const role = (user.value?.role as unknown as string)
         
         // Verificar nuevamente si estamos haciendo logout antes de redirigir
         if (isLoggingOut) {
@@ -130,11 +113,6 @@ export default defineNuxtPlugin(() => {
           return
         }
         
-        try { await router.isReady() } catch {}
-        if (document.readyState !== 'complete') {
-          await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
-        }
-        await nextTick()
         if (role === 'admin') await router.replace('/dashboard')
         else if (role === 'user' || role === 'customer') await router.replace('/user')
       } catch (_e) {}

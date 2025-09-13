@@ -46,14 +46,21 @@ export default defineNuxtConfig({
     payloadExtraction: false,
     renderJsonPayloads: false,
     componentIslands: false,
-    inlineSSRStyles: false
+    inlineSSRStyles: false,
+    viewTransition: true // Habilitar transiciones de vista para mejor UX
   },
   
-  // Configuración de renderizado para evitar problemas de cache
+  // Configuración de renderizado optimizada
   render: {
     bundleRenderer: {
-      shouldPreload: () => false,
-      shouldPrefetch: () => false
+      shouldPreload: (file: string, type: string) => {
+        // Precargar solo archivos críticos
+        return type === 'script' && file.includes('app')
+      },
+      shouldPrefetch: (file: string, type: string) => {
+        // Prefetch solo archivos no críticos
+        return type === 'script' && !file.includes('app')
+      }
     }
   },
   

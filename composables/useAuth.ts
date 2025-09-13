@@ -119,13 +119,13 @@ export const useAuth = () => {
     }
   }
 
-  // Función para verificar autenticación al cargar la página
+  // Función para verificar autenticación al cargar la página (optimizada)
   const checkAuth = async () => {
     try {
-      // Verificar sesión de Supabase con timeout
+      // Verificar sesión de Supabase con timeout reducido
       const sessionPromise = supabase.auth.getSession()
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session check timeout')), 10000)
+        setTimeout(() => reject(new Error('Session check timeout')), 5000) // Reducir de 10s a 5s
       )
       
       const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any
@@ -134,7 +134,7 @@ export const useAuth = () => {
         return false
       }
 
-      // Obtener perfil del usuario desde la tabla profiles con timeout
+      // Obtener perfil del usuario desde la tabla profiles con timeout reducido
       const profilePromise = supabase
         .from('profiles')
         .select('*')
@@ -142,7 +142,7 @@ export const useAuth = () => {
         .single()
       
       const profileTimeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000) // Reducir de 10s a 5s
       )
       
       const { data: profile, error: profileError } = await Promise.race([profilePromise, profileTimeoutPromise]) as any
@@ -165,10 +165,20 @@ export const useAuth = () => {
         updated_at: profile.updated_at
       }
 
-      // Actualizar localStorage
+      // Actualizar localStorage de forma asíncrona
       if (typeof window !== 'undefined') {
-        localStorage.setItem('user', JSON.stringify(user.value))
-        localStorage.setItem('isAuthenticated', 'true')
+        // Usar requestIdleCallback si está disponible para no bloquear el hilo principal
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(() => {
+            localStorage.setItem('user', JSON.stringify(user.value))
+            localStorage.setItem('isAuthenticated', 'true')
+          })
+        } else {
+          setTimeout(() => {
+            localStorage.setItem('user', JSON.stringify(user.value))
+            localStorage.setItem('isAuthenticated', 'true')
+          }, 0)
+        }
       }
       
       return true

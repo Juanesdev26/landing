@@ -177,8 +177,7 @@ const handleLogin = async () => {
         error.value = 'No se pudo obtener el perfil'
         return
       }
-      // Deja que el plugin de auth redirija por rol para evitar doble navegación.
-      // Fallback: si seguimos en /login después de 1500ms, redirigimos aquí.
+      // Optimización: reducir timeout y usar navegación más eficiente
       setTimeout(async () => {
         try {
           if (router.currentRoute.value.path === '/login') {
@@ -187,7 +186,7 @@ const handleLogin = async () => {
             else await router.replace('/')
           }
         } catch (_e) {}
-      }, 1500)
+      }, 800) // Reducir de 1500ms a 800ms
     } else {
       error.value = result.error || 'Credenciales incorrectas'
     }

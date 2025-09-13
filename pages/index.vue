@@ -243,12 +243,18 @@ const { formatCOP } = useCurrency()
 const fetchHomeData = async () => {
   loading.value = true
   try {
-    const [{ data: catRes }, { data: prodRes }] = await Promise.all([
-      $fetch('/api/categories'),
-      $fetch('/api/products')
+    // Optimización: cargar datos en paralelo con timeout
+    const [{ data: catRes }, { data: prodRes }] = await Promise.allSettled([
+      $fetch('/api/categories', { timeout: 5000 }),
+      $fetch('/api/products', { timeout: 5000 })
     ])
-    if (catRes?.success) categories.value = catRes.data
-    if (prodRes?.success) products.value = (prodRes.data || []).slice(0, 8)
+    
+    if (catRes.status === 'fulfilled' && catRes.value?.success) {
+      categories.value = catRes.value.data
+    }
+    if (prodRes.status === 'fulfilled' && prodRes.value?.success) {
+      products.value = (prodRes.value.data || []).slice(0, 8)
+    }
   } catch (e) {
     console.error('Error cargando datos del home:', e)
   } finally {
@@ -256,7 +262,15 @@ const fetchHomeData = async () => {
   }
 }
 
-onMounted(fetchHomeData)
+// Optimización: cargar datos después de que la página esté lista
+onMounted(() => {
+  // Usar requestIdleCallback si está disponible, sino setTimeout
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(fetchHomeData)
+  } else {
+    setTimeout(fetchHomeData, 100)
+  }
+})
 
 // Intento de agregar: si no hay sesión, ir a login y luego /user agregará
 const supabase = useSupabaseClient()
