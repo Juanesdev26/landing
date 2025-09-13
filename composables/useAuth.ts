@@ -85,28 +85,36 @@ export const useAuth = () => {
   // Función para cerrar sesión
   const logout = async () => {
     try {
-      // Cerrar sesión de Supabase
+      // 1. Cerrar sesión de Supabase PRIMERO
       const { error } = await supabase.auth.signOut()
       
       if (error) {
         console.error('Error cerrando sesión de Supabase:', error)
       }
-
-      // Limpiar estado
+      
+      // 2. Limpiar estado inmediatamente
       user.value = null
       
-      // Limpiar localStorage
+      // 3. Limpiar localStorage inmediatamente
       if (typeof window !== 'undefined') {
         localStorage.removeItem('user')
         localStorage.removeItem('isAuthenticated')
+        // Limpiar también datos del carrito para evitar problemas
+        const cartKeys = Object.keys(localStorage).filter(key => key.startsWith('cart:'))
+        cartKeys.forEach(key => localStorage.removeItem(key))
       }
 
       return { success: true }
     } catch (error) {
       console.error('Error en logout:', error)
+      // Asegurar que el estado se limpia incluso si hay error
+      user.value = null
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user')
+        localStorage.removeItem('isAuthenticated')
+      }
       return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Error al cerrar sesión' 
+        success: true // Siempre retornar success para permitir redirección
       }
     }
   }

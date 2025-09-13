@@ -3,7 +3,7 @@
  * Se ejecuta solo en el cliente para inicializar el estado de autenticación
  */
 
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin(() => {
   const supabase = useSupabaseClient()
   const { checkAuth } = useAuth()
   const { user } = useAuth()
@@ -34,8 +34,9 @@ export default defineNuxtPlugin(async () => {
   }
   
   // Verificar sesión de Supabase al cargar la aplicación
-  try {
-    const { data: { session }, error } = await supabase.auth.getSession()
+  const initAuth = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession()
     
     if (error) {
       console.error('❌ Error obteniendo sesión:', error)
@@ -57,28 +58,60 @@ export default defineNuxtPlugin(async () => {
         try {
           const role = (user.value?.role as unknown as string)
           if (router.currentRoute.value.path === '/' || router.currentRoute.value.path === '/login') {
-            try { await router.isReady() } catch {}
-            if (document.readyState !== 'complete') {
-              await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
-            }
-            await nextTick()
-            if (role === 'admin') await router.replace('/dashboard')
-            else if (role === 'user') await router.replace('/user')
+        try { await router.isReady() } catch {}
+        if (document.readyState !== 'complete') {
+          await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
+        }
+        await nextTick()
+        
+        // Verificar si estamos haciendo logout antes de redirigir
+        if (isLoggingOut) {
+          console.log('🚫 Ignorando redirección inicial por logout en progreso')
+          return
+        }
+        
+        // No redirigir si estamos en /login
+        if (router.currentRoute.value.path === '/login') {
+          console.log('🚫 Ignorando redirección inicial porque estamos en /login')
+          return
+        }
+        
+        if (role === 'admin') await router.replace('/dashboard')
+        else if (role === 'user') await router.replace('/user')
           }
         } catch (_e) {}
       }
     } else {
       if (import.meta.env.DEV) console.log('ℹ️ No hay sesión activa')
     }
-  } catch (error) {
-    console.error('❌ Error verificando sesión:', error)
+    } catch (error) {
+      console.error('❌ Error verificando sesión:', error)
+    }
   }
   
+  // Ejecutar inicialización
+  initAuth()
+  
+  // Flag para controlar redirecciones automáticas
+  let isLoggingOut = false
+
   // Escuchar cambios en la autenticación (incluye sesión inicial)
   supabase.auth.onAuthStateChange(async (event, session) => {
     console.log('🔄 Cambio de estado de autenticación:', event)
     
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+      // No redirigir si estamos en proceso de logout
+      if (isLoggingOut) {
+        console.log('🚫 Ignorando redirección por logout en progreso')
+        return
+      }
+      
+      // No redirigir si estamos en la página de login
+      if (typeof window !== 'undefined' && window.location.pathname === '/login') {
+        console.log('🚫 Ignorando redirección porque estamos en /login')
+        return
+      }
+      
       if (import.meta.env.DEV) console.log('✅ Usuario inició sesión:', session.user.email)
       // Upsert/upgrade profile to role 'user' after third-party login
       try {
@@ -90,6 +123,13 @@ export default defineNuxtPlugin(async () => {
       try {
         const role = (await waitForProfileRole(session.user.id)) || (user.value?.role as unknown as string)
         await checkAuth()
+        
+        // Verificar nuevamente si estamos haciendo logout antes de redirigir
+        if (isLoggingOut) {
+          console.log('🚫 Ignorando redirección por logout en progreso (después de checkAuth)')
+          return
+        }
+        
         try { await router.isReady() } catch {}
         if (document.readyState !== 'complete') {
           await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
@@ -100,23 +140,25 @@ export default defineNuxtPlugin(async () => {
       } catch (_e) {}
     } else if (event === 'SIGNED_OUT') {
       if (import.meta.env.DEV) console.log('🚪 Usuario cerró sesión')
-      // Limpiar estado local en caso de que no se haya usado useAuth().logout()
-      try {
-        const auth = useAuth() as any
-        // limpiar estado usando la API pública
-        await auth.logout?.()
-      } catch (_e) {}
-      // Redirigir a login una sola vez, esperando router y estilos
-      try {
-        try { await router.isReady() } catch {}
-        if (document.readyState !== 'complete') {
-          await new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
-        }
-        await nextTick()
-        if (router.currentRoute.value.path !== '/login') await router.replace('/login')
-      } catch (_e) {}
+      isLoggingOut = false // Reset flag
+      
+      // Solo limpiar localStorage si no se hizo desde useAuth().logout()
+      const currentUser = user.value
+      if (currentUser && typeof window !== 'undefined') {
+        localStorage.removeItem('user')
+        localStorage.removeItem('isAuthenticated')
+      }
+      
+      // No redirigir automáticamente, dejar que el componente maneje la redirección
     }
   })
+
+  // Exponer flag para control desde componentes
+  return {
+    provide: {
+      setLoggingOut: (value: boolean) => { isLoggingOut = value }
+    }
+  }
 })
 
 

@@ -44,7 +44,9 @@ export default defineNuxtConfig({
   // Optimizaciones de rendimiento
   experimental: {
     payloadExtraction: false,
-    renderJsonPayloads: false
+    renderJsonPayloads: false,
+    componentIslands: false,
+    inlineSSRStyles: false
   },
   
   // Configuración de renderizado para evitar problemas de cache
@@ -126,10 +128,15 @@ export default defineNuxtConfig({
       rollupOptions: {
         output: {
           manualChunks: {
-            'chart': ['vue-chartjs', 'chart.js']
+            'chart': ['vue-chartjs', 'chart.js'],
+            'vendor': ['vue', '@vue/runtime-core', '@vue/runtime-dom']
           }
         }
       }
+    },
+    // Optimizaciones adicionales
+    define: {
+      __VUE_PROD_DEVTOOLS__: false
     }
   }
 })

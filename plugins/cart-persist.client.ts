@@ -10,7 +10,10 @@ export default defineNuxtPlugin((nuxtApp) => {
       const supabase = useSupabaseClient<any>()
       const getKey = (uid?: string | null) => `cart:${uid || 'guest'}`
       let currentUid: string | null = null
+      let isDestroyed = false
+      let cleanupFunctions: (() => void)[] = []
       const loadForUser = async () => {
+        if (isDestroyed) return
         try {
           const { data: { session } } = await supabase.auth.getSession()
           currentUid = session?.user?.id || null
@@ -18,13 +21,17 @@ export default defineNuxtPlugin((nuxtApp) => {
           const cached = localStorage.getItem(key)
           if (cached) {
             const parsed = JSON.parse(cached)
-            store.$patch({
-              items: Array.isArray(parsed.items) ? parsed.items : [],
-              taxAmount: typeof parsed.taxAmount === 'number' ? parsed.taxAmount : 0,
-              shippingAmount: typeof parsed.shippingAmount === 'number' ? parsed.shippingAmount : 0
-            })
+            if (!isDestroyed) {
+              store.$patch({
+                items: Array.isArray(parsed.items) ? parsed.items : [],
+                taxAmount: typeof parsed.taxAmount === 'number' ? parsed.taxAmount : 0,
+                shippingAmount: typeof parsed.shippingAmount === 'number' ? parsed.shippingAmount : 0
+              })
+            }
           } else {
-            store.$patch({ items: [], taxAmount: 0, shippingAmount: 0 })
+            if (!isDestroyed) {
+              store.$patch({ items: [], taxAmount: 0, shippingAmount: 0 })
+            }
           }
         } catch (e) {
           console.error('Error loading cart from localStorage', e)
@@ -51,27 +58,44 @@ export default defineNuxtPlugin((nuxtApp) => {
         console.error('Error loading cart from localStorage', e)
       }
 
-      store.$subscribe(async (_mutation: any, state: any) => {
-        try {
-          if (currentUid === null) {
-            const { data: { session } } = await supabase.auth.getSession()
-            currentUid = session?.user?.id || null
+      // Debounced save to prevent excessive localStorage writes
+      let saveTimeout: NodeJS.Timeout | null = null
+      const debouncedSave = (state: any) => {
+        if (saveTimeout) clearTimeout(saveTimeout)
+        saveTimeout = setTimeout(async () => {
+          if (isDestroyed) return
+          try {
+            if (currentUid === null) {
+              const { data: { session } } = await supabase.auth.getSession()
+              currentUid = session?.user?.id || null
+            }
+            const key = getKey(currentUid)
+            localStorage.setItem(key, JSON.stringify({
+              items: state.items,
+              taxAmount: state.taxAmount,
+              shippingAmount: state.shippingAmount
+            }))
+          } catch (e) {
+            console.error('Error saving cart to localStorage', e)
           }
-          const key = getKey(currentUid)
-          localStorage.setItem(key, JSON.stringify({
-            items: state.items,
-            taxAmount: state.taxAmount,
-            shippingAmount: state.shippingAmount
-          }))
-        } catch (e) {
-          console.error('Error saving cart to localStorage', e)
-        }
+        }, 300) // 300ms debounce
+      }
+
+      const unsubscribe = store.$subscribe(async (_mutation: any, state: any) => {
+        if (isDestroyed) return
+        debouncedSave(state)
       }, { detached: true })
+      
+      cleanupFunctions.push(() => {
+        if (saveTimeout) clearTimeout(saveTimeout)
+        unsubscribe()
+      })
 
       // Realtime: limpiar carrito si el admin elimina un pedido del usuario
       let ordersChannel: any = null
       let itemsChannel: any = null
       const subscribeOrdersDeletes = async () => {
+        if (isDestroyed) return
         try {
           const { data: sess } = await supabase.auth.getSession()
           const hasSession = Boolean(sess?.session?.user?.id)
@@ -79,10 +103,15 @@ export default defineNuxtPlugin((nuxtApp) => {
           const resp: any = await $fetch('/api/customers/my')
           const idCustomer = resp?.data?.success ? resp.data.data?.id_customer : null
           if (!idCustomer) return
+          
+          // Cleanup existing channels
           if (ordersChannel) try { supabase.removeChannel(ordersChannel) } catch {}
+          if (itemsChannel) try { supabase.removeChannel(itemsChannel) } catch {}
+          
           ordersChannel = (supabase as any)
             .channel(`orders-deletes-${idCustomer}`)
             .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'orders', filter: `customer_id=eq.${idCustomer}` }, (_payload: any) => {
+              if (isDestroyed) return
               try {
                 // Vaciar carrito local en el dispositivo del usuario
                 const key = getKey(currentUid)
@@ -93,11 +122,11 @@ export default defineNuxtPlugin((nuxtApp) => {
               }
             })
             .subscribe()
-          // Suscribirse a borrados de items del pedido para eliminar solo esos productos
-          if (itemsChannel) try { supabase.removeChannel(itemsChannel) } catch {}
+            
           itemsChannel = (supabase as any)
             .channel(`order-items-deletes-${idCustomer}`)
             .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'order_items' }, (payload: any) => {
+              if (isDestroyed) return
               try {
                 const oldRow = payload?.old || {}
                 const productId = oldRow.product_id as string | undefined
@@ -115,13 +144,20 @@ export default defineNuxtPlugin((nuxtApp) => {
               }
             })
             .subscribe()
+            
+          // Add cleanup functions
+          cleanupFunctions.push(() => {
+            if (ordersChannel) try { supabase.removeChannel(ordersChannel) } catch {}
+            if (itemsChannel) try { supabase.removeChannel(itemsChannel) } catch {}
+          })
         } catch (e) {
           // Silencioso
         }
       }
 
       // When auth state changes, reload the proper cart for that user and clear the old state
-      supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+        if (isDestroyed) return
         try {
           if (event === 'SIGNED_IN' && session?.user?.id) {
             const uid = session.user.id
@@ -141,10 +177,12 @@ export default defineNuxtPlugin((nuxtApp) => {
         } catch (e) {
           console.error('Error merging carts on sign-in', e)
         } finally {
-          await loadForUser()
-          await subscribeOrdersDeletes()
+          if (!isDestroyed) {
+            await loadForUser()
+            await subscribeOrdersDeletes()
+          }
         }
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' && !isDestroyed) {
           try { if (ordersChannel) supabase.removeChannel(ordersChannel) } catch {}
           try { if (itemsChannel) supabase.removeChannel(itemsChannel) } catch {}
           ordersChannel = null
@@ -153,14 +191,47 @@ export default defineNuxtPlugin((nuxtApp) => {
           await loadForUser()
         }
       })
+      
+      cleanupFunctions.push(() => {
+        subscription.unsubscribe()
+      })
 
       // Suscribirse inicialmente sólo si ya hay sesión
       ;(async () => {
         try {
+          if (isDestroyed) return
           const { data: sess } = await supabase.auth.getSession()
           if (sess?.session?.user?.id) await subscribeOrdersDeletes()
         } catch {}
       })()
+
+      // Cleanup function for when the plugin is destroyed
+      const cleanup = () => {
+        isDestroyed = true
+        cleanupFunctions.forEach(fn => {
+          try { fn() } catch (e) { console.error('Cleanup error:', e) }
+        })
+        cleanupFunctions = []
+      }
+
+      // Register cleanup on app unmount - using a more compatible approach
+      if (process.client) {
+        // Use window events for cleanup
+        const cleanupOnUnload = () => {
+          cleanup()
+        }
+        
+        window.addEventListener('beforeunload', cleanupOnUnload)
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'hidden') {
+            cleanup()
+          }
+        })
+        
+        cleanupFunctions.push(() => {
+          window.removeEventListener('beforeunload', cleanupOnUnload)
+        })
+      }
     }
   })
 })

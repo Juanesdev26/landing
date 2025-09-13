@@ -113,7 +113,7 @@
               <button class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 transition-colors" :title="'Notificaciones'">
                 <Icon name="heroicons:bell" class="w-5 h-5" />
               </button>
-              <button @click="handleLogout" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 transition-colors" :title="'Cerrar sesión'">
+              <button @click="handleLogout" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 transition-colors" :title="'Cerrar sesión'" :disabled="false">
                 <Icon name="heroicons:arrow-right-on-rectangle" class="w-5 h-5" />
               </button>
             </div>
@@ -153,46 +153,54 @@ const { isDark, toggleTheme } = useTheme()
 // Composable de autenticación
 const { logout } = useAuth()
 
-// Key para forzar re-renderizado cuando sea necesario
+// Key para forzar re-renderizado cuando sea necesario (solo cuando realmente se necesite)
 const refreshKey = ref(0)
 
-// Detectar inactividad y forzar refresh
+// Detectar inactividad de manera más eficiente
 let lastInteraction = Date.now()
-const INACTIVITY_THRESHOLD = 5 * 60 * 1000 // 5 minutos
+let inactivityTimer = null
+const INACTIVITY_THRESHOLD = 10 * 60 * 1000 // Aumentado a 10 minutos para reducir re-renders
 
 const handleUserActivity = () => {
   lastInteraction = Date.now()
-}
-
-const checkForInactivity = () => {
-  const now = Date.now()
-  if (now - lastInteraction > INACTIVITY_THRESHOLD) {
-    // Forzar re-render incrementando la key
-    refreshKey.value++
-    lastInteraction = now
+  // Solo refrescar si realmente ha pasado mucho tiempo
+  if (inactivityTimer) {
+    clearTimeout(inactivityTimer)
   }
+  inactivityTimer = setTimeout(() => {
+    const now = Date.now()
+    if (now - lastInteraction > INACTIVITY_THRESHOLD) {
+      refreshKey.value++
+      lastInteraction = now
+    }
+  }, INACTIVITY_THRESHOLD)
 }
 
-// Eventos para detectar actividad
+// Eventos para detectar actividad (reducidos)
 onMounted(() => {
-  const events = ['click', 'mousemove', 'keydown', 'scroll', 'touchstart']
+  const events = ['click', 'keydown'] // Solo eventos importantes
   events.forEach(event => {
     document.addEventListener(event, handleUserActivity, { passive: true })
   })
   
-  // Verificar inactividad cada minuto
-  setInterval(checkForInactivity, 60000)
-  
-  // Forzar refresh cuando la ventana recupera el foco
+  // Solo refrescar cuando la ventana recupera el foco si ha pasado mucho tiempo
   window.addEventListener('focus', () => {
-    refreshKey.value++
-  })
-  
-  // Forzar refresh cuando la página se vuelve visible
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
+    const now = Date.now()
+    if (now - lastInteraction > INACTIVITY_THRESHOLD) {
       refreshKey.value++
+      lastInteraction = now
     }
+  })
+})
+
+// Cleanup
+onUnmounted(() => {
+  if (inactivityTimer) {
+    clearTimeout(inactivityTimer)
+  }
+  const events = ['click', 'keydown']
+  events.forEach(event => {
+    document.removeEventListener(event, handleUserActivity)
   })
 })
 
@@ -217,9 +225,60 @@ const userRole = ref('Admin')
 
 const handleLogout = async () => {
   try {
-    await logout()
+    console.log('🚪 Iniciando logout de admin...')
+    
+    // 1. Deshabilitar autenticación inmediatamente
+    const { $disableAuth } = useNuxtApp()
+    if ($disableAuth) {
+      $disableAuth()
+      console.log('🚫 Auth deshabilitado')
+    }
+    
+    // 2. Marcar que estamos haciendo logout para evitar redirecciones automáticas
+    const { $setLoggingOut } = useNuxtApp()
+    if ($setLoggingOut) {
+      $setLoggingOut(true)
+    }
+    
+    // 2. Matar la sesión completamente
+    const { $killSession } = useNuxtApp()
+    if ($killSession) {
+      $killSession()
+      return
+    }
+    
+    // 3. Fallback: método tradicional
+    const supabase = useSupabaseClient()
+    const { error } = await supabase.auth.signOut()
+    
+    if (error) {
+      console.error('Error cerrando sesión de Supabase:', error)
+    }
+    
+    // Limpiar estado local
+    const { user } = useAuth()
+    user.value = null
+    
+    // Limpiar localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user')
+      localStorage.removeItem('isAuthenticated')
+      // Limpiar datos del carrito
+      const cartKeys = Object.keys(localStorage).filter(key => key.startsWith('cart:'))
+      cartKeys.forEach(key => localStorage.removeItem(key))
+    }
+    
+    // Redireccionar a login usando window.location para asegurar que funcione
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    
   } catch (e) {
-    console.error('Error al cerrar sesión:', e)
+    console.error('Error en logout:', e)
+    // Fallback: redirección directa
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
   }
 }
 </script>

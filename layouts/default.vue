@@ -206,7 +206,85 @@ const checkForInactivity = () => {
 }
 
 const handleLogout = async () => {
-  try { await logout() } catch (e) { console.error(e) }
+  try {
+    console.log('🚪 Iniciando logout de usuario...')
+    
+    // 1. Deshabilitar autenticación inmediatamente
+    const { $disableAuth } = useNuxtApp()
+    if ($disableAuth) {
+      $disableAuth()
+      console.log('🚫 Auth deshabilitado')
+    }
+    
+    // 2. Matar la sesión completamente
+    const { $killSession } = useNuxtApp()
+    if ($killSession) {
+      $killSession()
+      return
+    }
+    
+    // 3. Fallback: usar el plugin de logout forzado
+    const { $forceLogout } = useNuxtApp()
+    if ($forceLogout) {
+      $forceLogout()
+      return
+    }
+    
+    // Fallback si el plugin no está disponible
+    console.log('⚠️ Plugin de logout forzado no disponible, usando método alternativo')
+    
+    // 1. Marcar que estamos haciendo logout para evitar redirecciones automáticas
+    const { $setLoggingOut } = useNuxtApp()
+    if ($setLoggingOut) {
+      $setLoggingOut(true)
+      console.log('🚫 Flag de logout activado')
+    }
+    
+    // 2. Limpiar estado local INMEDIATAMENTE
+    const { user } = useAuth()
+    user.value = null
+    console.log('🧹 Estado de usuario limpiado')
+    
+    // 3. Limpiar localStorage INMEDIATAMENTE
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user')
+      localStorage.removeItem('isAuthenticated')
+      // Limpiar datos del carrito
+      const cartKeys = Object.keys(localStorage).filter(key => key.startsWith('cart:'))
+      cartKeys.forEach(key => localStorage.removeItem(key))
+      console.log('🧹 localStorage limpiado')
+    }
+    
+    // 4. Cerrar sesión de Supabase
+    const supabase = useSupabaseClient()
+    const { error } = await supabase.auth.signOut()
+    
+    if (error) {
+      console.error('Error cerrando sesión de Supabase:', error)
+    } else {
+      console.log('✅ Sesión de Supabase cerrada')
+    }
+    
+    // 5. Redireccionar inmediatamente usando window.location
+    console.log('🔄 Redirigiendo a /login...')
+    if (typeof window !== 'undefined') {
+      // Forzar redirección con timeout como backup
+      window.location.href = '/login'
+      setTimeout(() => {
+        if (window.location.pathname !== '/login') {
+          console.log('🔄 Forzando redirección...')
+          window.location.replace('/login')
+        }
+      }, 100)
+    }
+    
+  } catch (e) {
+    console.error('Error en logout:', e)
+    // Fallback: redirección directa
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+  }
 }
 
 // Composable para navegación de usuario
