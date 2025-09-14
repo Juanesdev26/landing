@@ -55,8 +55,8 @@
 
             <!-- Cart (solo usuarios) -->
             <button v-if="isUser" @click="navigateToCart" class="relative theme-text-primary hover:text-pink-600 transition-colors group">
-              <div class="p-2 rounded-full bg-gradient-to-r from-pink-100 to-purple-100 group-hover:from-pink-200 group-hover:to-purple-200 transition-all duration-300">
-                <Icon name="heroicons:shopping-cart" class="w-6 h-6" />
+              <div class="p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 group-hover:from-pink-600 group-hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+                <Icon name="heroicons:shopping-cart" class="w-6 h-6 text-white" />
               </div>
               <span v-if="cartItemsCount > 0" class="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg animate-pulse">
                 {{ cartItemsCount }}

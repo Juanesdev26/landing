@@ -18,6 +18,9 @@ interface PreloadConfig {
 }
 
 export default defineNuxtPlugin(() => {
+  // Plugin deshabilitado temporalmente para aislar errores
+  console.log('🚀 Resource preloader deshabilitado temporalmente')
+  return {}
   const router = useRouter()
   const route = useRoute()
   
@@ -30,12 +33,6 @@ export default defineNuxtPlugin(() => {
     const baseUrl = window.location.origin
     
     return [
-      // Fuentes críticas
-      {
-        href: 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap',
-        as: 'style',
-        type: 'text/css'
-      },
       // API endpoints críticos
       {
         href: `${baseUrl}/api/categories`,
@@ -61,11 +58,6 @@ export default defineNuxtPlugin(() => {
         as: 'fetch',
         crossorigin: true
       },
-      {
-        href: `${baseUrl}/api/orders/recent`,
-        as: 'fetch',
-        crossorigin: true
-      }
     ]
   }
 
@@ -209,19 +201,16 @@ export default defineNuxtPlugin(() => {
     })
   }
 
-  // Función para precargar API basada en navegación
+  // Función para precargar API basada en navegación (solo APIs públicas)
   const preloadAPIForRoute = (routePath: string) => {
     const baseUrl = window.location.origin
-    const apiEndpoints: Record<string, string[]> = {
+    const publicApiEndpoints: Record<string, string[]> = {
+      '/': [`${baseUrl}/api/categories`, `${baseUrl}/api/products`],
       '/shop': [`${baseUrl}/api/categories`, `${baseUrl}/api/products`],
-      '/user': [`${baseUrl}/api/orders/my`, `${baseUrl}/api/customers/my`],
-      '/admin': [`${baseUrl}/api/dashboard`, `${baseUrl}/api/orders/stats`],
-      '/admin/products': [`${baseUrl}/api/products`, `${baseUrl}/api/categories`],
-      '/admin/orders': [`${baseUrl}/api/orders`, `${baseUrl}/api/orders/stats`],
-      '/admin/customers': [`${baseUrl}/api/customers`, `${baseUrl}/api/customers/stats`]
+      '/about': []
     }
 
-    const endpoints = apiEndpoints[routePath]
+    const endpoints = publicApiEndpoints[routePath]
     if (endpoints) {
       const resources = endpoints.map(href => ({
         href,

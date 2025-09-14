@@ -41,44 +41,23 @@ export default defineNuxtConfig({
     { path: "~/components", pathPrefix: false }
   ],
   
-  // Optimizaciones de rendimiento agresivas
+  // Configuración mínima para estabilidad
   experimental: {
     payloadExtraction: false,
     renderJsonPayloads: false,
-    componentIslands: true, // Habilitar islands para mejor performance
-    inlineSSRStyles: true, // Inline crítico CSS
-    viewTransition: true,
-    typedPages: true, // Mejor TypeScript
-    appManifest: false, // Deshabilitar manifest no crítico
-    headNext: true // Mejor gestión del head
+    componentIslands: false,
+    inlineSSRStyles: false, // Deshabilitado para evitar problemas
+    viewTransition: false,
+    typedPages: false, // Deshabilitado temporalmente
+    appManifest: false,
+    headNext: false // Deshabilitado temporalmente
   },
   
   // Configuración de renderizado ultra optimizada
   render: {
     bundleRenderer: {
-      shouldPreload: (file: string, type: string) => {
-        // Precargar solo recursos críticos para el above-the-fold
-        if (type === 'script') {
-          return file.includes('app') || file.includes('runtime') || file.includes('vendor')
-        }
-        if (type === 'style') {
-          return file.includes('app') || file.includes('critical')
-        }
-        if (type === 'font') {
-          return file.includes('woff2')
-        }
-        return false
-      },
-      shouldPrefetch: (file: string, type: string) => {
-        // Prefetch recursos no críticos de forma inteligente
-        if (type === 'script') {
-          return !file.includes('app') && !file.includes('runtime') && !file.includes('vendor')
-        }
-        if (type === 'style') {
-          return !file.includes('app') && !file.includes('critical')
-        }
-        return false
-      },
+      shouldPreload: () => false, // Deshabilitado temporalmente
+      shouldPrefetch: () => false, // Deshabilitado temporalmente
       // Optimizaciones adicionales
       resourceHints: true,
       runInNewContext: false
@@ -97,9 +76,10 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: "icon", href: "/favicon.ico" },
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        { rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "" },
-        { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap" }
+        // Fuentes deshabilitadas temporalmente para evitar errores 404
+        // { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        // { rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "" },
+        // { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap&subset=latin" }
       ],
       script: [
         {
@@ -137,14 +117,14 @@ export default defineNuxtConfig({
   // Configuración de build ultra optimizada
   build: {
     transpile: ["vue-chartjs"],
-    // Optimizaciones adicionales
+    // Configuración simplificada
     analyze: false,
-    extractCSS: true,
+    extractCSS: false, // Simplificado
     optimization: {
       splitChunks: {
-        layouts: true,
-        pages: true,
-        commons: true
+        layouts: false, // Simplificado
+        pages: false,
+        commons: false
       }
     }
   },
@@ -185,30 +165,7 @@ export default defineNuxtConfig({
       minify: 'terser',
       rollupOptions: {
         output: {
-          manualChunks: (id: string) => {
-            // Chunking inteligente
-            if (id.includes('node_modules')) {
-              if (id.includes('vue-chartjs') || id.includes('chart.js')) {
-                return 'charts'
-              }
-              if (id.includes('supabase')) {
-                return 'supabase'
-              }
-              if (id.includes('vue') || id.includes('@vue')) {
-                return 'vue-vendor'
-              }
-              return 'vendor'
-            }
-            if (id.includes('pages/admin')) {
-              return 'admin-pages'
-            }
-            if (id.includes('pages/user')) {
-              return 'user-pages'
-            }
-            if (id.includes('pages/shop')) {
-              return 'shop-pages'
-            }
-          },
+          manualChunks: undefined, // Simplificado
           // Optimizaciones de chunks
           chunkFileNames: (chunkInfo: any) => {
             const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk'
@@ -216,11 +173,11 @@ export default defineNuxtConfig({
           }
         }
       },
-      // Optimizaciones de terser
+      // Configuración simplificada
       terserOptions: {
         compress: {
-          drop_console: true,
-          drop_debugger: true
+          drop_console: false, // Simplificado
+          drop_debugger: false
         }
       }
     },

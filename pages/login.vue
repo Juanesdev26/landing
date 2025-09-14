@@ -10,10 +10,16 @@
     <!-- Main Content -->
     <div class="relative z-10 min-h-screen flex items-center justify-center p-4">
       <div class="w-full max-w-md">
-        <!-- Back to home -->
-        <div class="mb-4 flex justify-end">
-          <NuxtLink to="/" class="text-sm text-white/80 hover:text-white underline underline-offset-4">
-            Volver al inicio
+        <!-- Back to home button -->
+        <div class="mb-6 flex justify-start">
+          <NuxtLink 
+            to="/" 
+            class="back-to-home-btn group inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-transparent"
+          >
+            <svg class="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            <span class="font-medium text-sm">Volver al Inicio</span>
           </NuxtLink>
         </div>
         <!-- Login Card -->
@@ -245,6 +251,21 @@ const loginWithGoogle = async () => {
 
 .animation-delay-1000 {
   animation-delay: 1s;
+}
+
+/* Estilos específicos para el botón "Volver al Inicio" */
+.back-to-home-btn {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.back-to-home-btn:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 </style>
 

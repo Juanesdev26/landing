@@ -18,6 +18,9 @@ interface NavigationPattern {
 }
 
 export default defineNuxtPlugin(() => {
+  // Plugin deshabilitado temporalmente para evitar errores
+  console.log('📄 Page preloader deshabilitado temporalmente')
+  return {}
   const router = useRouter()
   const route = useRoute()
   
@@ -28,33 +31,29 @@ export default defineNuxtPlugin(() => {
   // Patrones de navegación del usuario
   const navigationPatterns = new Map<string, NavigationPattern>()
   
-  // Configuración de precarga
+  // Configuración de precarga (solo rutas, sin componentes problemáticos)
   const preloadConfigs: Record<string, PreloadConfig> = {
     '/': {
       routes: ['/shop', '/about', '/login'],
-      components: ['~/components/common/Toast.vue', '~/components/common/ConfirmModal.vue'],
+      components: [], // Deshabilitado temporalmente
       priority: 'high',
       trigger: 'hover'
     },
     '/shop': {
       routes: ['/shop/cart', '/user'],
-      components: ['~/components/common/Toast.vue'],
+      components: [], // Deshabilitado temporalmente
       priority: 'high',
       trigger: 'hover'
     },
     '/user': {
       routes: ['/shop', '/user/orders'],
-      components: ['~/components/common/Toast.vue'],
+      components: [], // Deshabilitado temporalmente
       priority: 'medium',
       trigger: 'hover'
     },
     '/admin': {
       routes: ['/admin/products', '/admin/orders', '/admin/customers'],
-      components: [
-        '~/components/admin/products/ProductModal.vue',
-        '~/components/admin/orders/OrderModal.vue',
-        '~/components/admin/customers/CustomerModal.vue'
-      ],
+      components: [], // Deshabilitado temporalmente
       priority: 'high',
       trigger: 'hover'
     }
@@ -211,18 +210,19 @@ export default defineNuxtPlugin(() => {
     })
   }
 
-  // Función para precargar componentes críticos
+  // Función para precargar componentes críticos (deshabilitada temporalmente)
   const preloadCriticalComponents = (): void => {
-    const criticalComponents = [
-      '~/components/common/Toast.vue',
-      '~/components/common/ConfirmModal.vue'
-    ]
+    // Deshabilitado temporalmente para evitar errores de especificadores
+    // const criticalComponents = [
+    //   '~/components/common/Toast.vue',
+    //   '~/components/common/ConfirmModal.vue'
+    // ]
     
-    criticalComponents.forEach(component => {
-      if (!preloadedComponents.has(component)) {
-        preloadComponent(component)
-      }
-    })
+    // criticalComponents.forEach(component => {
+    //   if (!preloadedComponents.has(component)) {
+    //     preloadComponent(component)
+    //   }
+    // })
   }
 
   // Función para precargar basado en la página actual
@@ -250,21 +250,26 @@ export default defineNuxtPlugin(() => {
     }
   }
 
-  // Función para precargar APIs relacionadas
+  // Función para precargar APIs relacionadas (solo APIs públicas)
   const preloadRelatedAPIs = (): void => {
     const currentPath = route.path
-    const apiEndpoints: Record<string, string[]> = {
+    const publicApiEndpoints: Record<string, string[]> = {
+      '/': ['/api/categories', '/api/products'],
       '/shop': ['/api/categories', '/api/products'],
-      '/user': ['/api/orders/my', '/api/customers/my'],
-      '/admin': ['/api/dashboard', '/api/orders/stats']
+      '/about': []
     }
 
-    const endpoints = apiEndpoints[currentPath]
-    if (endpoints) {
+    const endpoints = publicApiEndpoints[currentPath]
+    if (endpoints && endpoints.length > 0) {
       endpoints.forEach(endpoint => {
-        // Precargar API endpoint
-        fetch(endpoint, { method: 'HEAD' }).catch(() => {
-          // Ignorar errores de precarga
+        // Solo precargar APIs públicas que no requieren autenticación
+        fetch(endpoint, { 
+          method: 'HEAD',
+          headers: {
+            'Accept': 'application/json'
+          }
+        }).catch(() => {
+          // Ignorar errores de precarga silenciosamente
         })
       })
     }
@@ -296,8 +301,8 @@ export default defineNuxtPlugin(() => {
     // 1. Precargar páginas críticas
     preloadCriticalPages()
     
-    // 2. Precargar componentes críticos
-    preloadCriticalComponents()
+    // 2. Precargar componentes críticos (deshabilitado temporalmente)
+    // preloadCriticalComponents()
     
     // 3. Configurar precarga en hover
     setupHoverPreloading()
@@ -305,8 +310,8 @@ export default defineNuxtPlugin(() => {
     // 4. Precargar basado en la página actual
     preloadForCurrentPage()
     
-    // 5. Precargar APIs relacionadas
-    preloadRelatedAPIs()
+    // 5. Precargar APIs relacionadas (deshabilitado temporalmente)
+    // preloadRelatedAPIs()
     
     // 6. Precargar basado en patrones (después de un delay)
     setTimeout(() => {
@@ -322,7 +327,7 @@ export default defineNuxtPlugin(() => {
     // Precargar para la nueva página
     setTimeout(() => {
       preloadForCurrentPage()
-      preloadRelatedAPIs()
+      // preloadRelatedAPIs() // Deshabilitado temporalmente
     }, 1000)
   })
 
