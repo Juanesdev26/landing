@@ -99,7 +99,15 @@
                 <div class="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div class="relative z-10">
                   <div class="w-20 h-20 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg overflow-hidden">
-                    <img v-if="cat.image_url" :src="cat.image_url" :alt="cat.name" class="w-full h-full object-cover rounded-full" />
+                    <img 
+                      v-if="cat.image_url" 
+                      :src="cat.image_url" 
+                      :alt="cat.name" 
+                      class="w-full h-full object-cover rounded-full"
+                      loading="lazy"
+                      data-lazy="true"
+                      :data-src="cat.image_url"
+                    />
                     <Icon v-else name="heroicons:tag" class="w-10 h-10 text-white" />
                   </div>
                   <h3 class="text-2xl font-bold theme-text-primary mb-3 group-hover:text-pink-600 transition-colors">{{ cat.name }}</h3>
@@ -134,7 +142,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           <div v-for="p in products" :key="p.id_product" class="group theme-card-bg rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 theme-card-border">
             <div class="relative h-64 bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-              <img v-if="p.image_url" :src="p.image_url" :alt="p.name" class="absolute inset-0 w-full h-full object-cover" />
+              <img 
+                v-if="p.image_url" 
+                :src="p.image_url" 
+                :alt="p.name" 
+                class="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+                data-lazy="true"
+                :data-src="p.image_url"
+              />
               <div class="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-purple-500/10"></div>
             </div>
             <div class="p-6">
@@ -240,20 +256,23 @@ const products = ref([])
 const loading = ref(false)
 const { formatCOP } = useCurrency()
 
+const { fetch: cachedFetch, parallelFetch } = useSimpleCache()
+
 const fetchHomeData = async () => {
   loading.value = true
   try {
-    // Optimización: cargar datos en paralelo con timeout
-    const [{ data: catRes }, { data: prodRes }] = await Promise.allSettled([
-      $fetch('/api/categories', { timeout: 5000 }),
-      $fetch('/api/products', { timeout: 5000 })
+    // Optimización: usar cache y cargar en paralelo
+    const results = await parallelFetch([
+      { url: '/api/categories', options: { cache: true, ttl: 10 * 60 * 1000 } },
+      { url: '/api/products', options: { cache: true, ttl: 5 * 60 * 1000 } }
     ])
     
-    if (catRes.status === 'fulfilled' && catRes.value?.success) {
-      categories.value = catRes.value.data
+    // Procesar resultados
+    if (results[0]?.success) {
+      categories.value = results[0].data || []
     }
-    if (prodRes.status === 'fulfilled' && prodRes.value?.success) {
-      products.value = (prodRes.value.data || []).slice(0, 8)
+    if (results[1]?.success) {
+      products.value = (results[1].data || []).slice(0, 8)
     }
   } catch (e) {
     console.error('Error cargando datos del home:', e)

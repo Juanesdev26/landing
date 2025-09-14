@@ -41,26 +41,47 @@ export default defineNuxtConfig({
     { path: "~/components", pathPrefix: false }
   ],
   
-  // Optimizaciones de rendimiento
+  // Optimizaciones de rendimiento agresivas
   experimental: {
     payloadExtraction: false,
     renderJsonPayloads: false,
-    componentIslands: false,
-    inlineSSRStyles: false,
-    viewTransition: true // Habilitar transiciones de vista para mejor UX
+    componentIslands: true, // Habilitar islands para mejor performance
+    inlineSSRStyles: true, // Inline crítico CSS
+    viewTransition: true,
+    typedPages: true, // Mejor TypeScript
+    appManifest: false, // Deshabilitar manifest no crítico
+    headNext: true // Mejor gestión del head
   },
   
-  // Configuración de renderizado optimizada
+  // Configuración de renderizado ultra optimizada
   render: {
     bundleRenderer: {
       shouldPreload: (file: string, type: string) => {
-        // Precargar solo archivos críticos
-        return type === 'script' && file.includes('app')
+        // Precargar solo recursos críticos para el above-the-fold
+        if (type === 'script') {
+          return file.includes('app') || file.includes('runtime') || file.includes('vendor')
+        }
+        if (type === 'style') {
+          return file.includes('app') || file.includes('critical')
+        }
+        if (type === 'font') {
+          return file.includes('woff2')
+        }
+        return false
       },
       shouldPrefetch: (file: string, type: string) => {
-        // Prefetch solo archivos no críticos
-        return type === 'script' && !file.includes('app')
-      }
+        // Prefetch recursos no críticos de forma inteligente
+        if (type === 'script') {
+          return !file.includes('app') && !file.includes('runtime') && !file.includes('vendor')
+        }
+        if (type === 'style') {
+          return !file.includes('app') && !file.includes('critical')
+        }
+        return false
+      },
+      // Optimizaciones adicionales
+      resourceHints: true,
+      runInNewContext: false
     }
   },
   
@@ -113,37 +134,104 @@ export default defineNuxtConfig({
     }
   },
   
-  // Configuración de build optimizada
+  // Configuración de build ultra optimizada
   build: {
-    transpile: ["vue-chartjs"]
+    transpile: ["vue-chartjs"],
+    // Optimizaciones adicionales
+    analyze: false,
+    extractCSS: true,
+    optimization: {
+      splitChunks: {
+        layouts: true,
+        pages: true,
+        commons: true
+      }
+    }
   },
   
-  // Configuración de Nitro
+  // Configuración de Nitro ultra optimizada
   nitro: {
     preset: 'vercel',
     compressPublicAssets: true,
-    minify: true
+    minify: true,
+    // Optimizaciones adicionales
+    experimental: {
+      wasm: true
+    },
+    storage: {
+      redis: {
+        driver: 'redis',
+        /* configuración de Redis para cache si está disponible */
+      }
+    },
+    // Cache agresivo
+    routeRules: {
+      '/api/**': { headers: { 'cache-control': 's-maxage=60' } },
+      '/_nuxt/**': { headers: { 'cache-control': 'max-age=31536000' } },
+      '/': { prerender: true },
+      '/shop': { prerender: true },
+      '/about': { prerender: true }
+    }
   },
   
-  // Configuración de Vite optimizada
+  // Configuración de Vite ultra optimizada
   vite: {
     optimizeDeps: {
-      include: ['vue-chartjs', 'chart.js']
+      include: ['vue-chartjs', 'chart.js', 'vue', '@vue/runtime-core', '@vue/runtime-dom']
     },
     build: {
-      sourcemap: false, // Deshabilitar sourcemaps para evitar warnings
+      sourcemap: false,
+      target: 'esnext',
+      minify: 'terser',
       rollupOptions: {
         output: {
-          manualChunks: {
-            'chart': ['vue-chartjs', 'chart.js'],
-            'vendor': ['vue', '@vue/runtime-core', '@vue/runtime-dom']
+          manualChunks: (id: string) => {
+            // Chunking inteligente
+            if (id.includes('node_modules')) {
+              if (id.includes('vue-chartjs') || id.includes('chart.js')) {
+                return 'charts'
+              }
+              if (id.includes('supabase')) {
+                return 'supabase'
+              }
+              if (id.includes('vue') || id.includes('@vue')) {
+                return 'vue-vendor'
+              }
+              return 'vendor'
+            }
+            if (id.includes('pages/admin')) {
+              return 'admin-pages'
+            }
+            if (id.includes('pages/user')) {
+              return 'user-pages'
+            }
+            if (id.includes('pages/shop')) {
+              return 'shop-pages'
+            }
+          },
+          // Optimizaciones de chunks
+          chunkFileNames: (chunkInfo: any) => {
+            const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk'
+            return `js/[name]-[hash].js`
           }
+        }
+      },
+      // Optimizaciones de terser
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true
         }
       }
     },
     // Optimizaciones adicionales
     define: {
-      __VUE_PROD_DEVTOOLS__: false
+      __VUE_PROD_DEVTOOLS__: false,
+      __VUE_OPTIONS_API__: false
+    },
+    // Optimización de CSS
+    css: {
+      devSourcemap: false
     }
   }
 })
