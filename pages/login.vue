@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen theme-login-bg relative overflow-hidden">
+  <div class="min-h-screen theme-login-bg relative overflow-hidden" :class="{ 'dark-theme': isDark }">
     <!-- Animated Background -->
     <div class="absolute inset-0 overflow-hidden">
       <div class="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
@@ -63,7 +63,7 @@
 
             <!-- Password Field -->
             <div class="space-y-2">
-              <label for="password" class="block text-sm font-medium text-gray-200">
+              <label for="password" class="block text-sm font-medium theme-login-label">
                 Contraseña
               </label>
               <div class="relative">
@@ -77,7 +77,7 @@
                   v-model="password"
                   type="password"
                   required
-                  class="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
+                  class="w-full pl-10 pr-4 py-3 theme-login-input border theme-login-border rounded-xl theme-login-text placeholder-theme-login-placeholder focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
                   placeholder="••••••••"
                   :disabled="loading"
                 />
@@ -123,9 +123,9 @@
             </div>
 
             <!-- Google Sign-In -->
-            <button type="button" @click="loginWithGoogle" :disabled="loading" class="w-full bg-white text-gray-800 py-3 px-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 flex items-center justify-center gap-3">
+            <button type="button" @click="loginWithGoogle" :disabled="loading" class="w-full bg-white text-gray-900 py-3 px-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 flex items-center justify-center gap-3 border border-gray-200 shadow-sm hover:shadow-md">
               <img alt="Google" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" />
-              Continuar con Google
+              <span class="text-gray-900 font-medium">Continuar con Google</span>
             </button>
           </form>
 
@@ -146,6 +146,22 @@
     <div class="absolute top-20 left-10 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
     <div class="absolute top-40 right-20 w-3 h-3 bg-purple-400 rounded-full animate-ping animation-delay-1000"></div>
     <div class="absolute bottom-20 left-20 w-2 h-2 bg-pink-400 rounded-full animate-ping animation-delay-2000"></div>
+    
+    <!-- Theme Toggle Button - Bottom Right -->
+    <div class="fixed bottom-6 right-6 z-50">
+      <button 
+        @click="toggleTheme" 
+        class="back-to-home-btn group inline-flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-transparent shadow-lg hover:shadow-xl"
+        :title="isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
+      >
+        <svg v-if="isDark" class="w-6 h-6 group-hover:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <svg v-else class="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -163,6 +179,14 @@ const password = ref('')
 const { login } = useAuth()
 const supabase = useSupabaseClient()
 const router = useRouter()
+
+// Tema
+const { theme, isDark, toggleTheme, initTheme } = useTheme()
+
+// Inicializar tema al montar
+onMounted(() => {
+  initTheme()
+})
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
@@ -266,6 +290,122 @@ const loginWithGoogle = async () => {
   background: rgba(255, 255, 255, 0.2) !important;
   transform: scale(1.05);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos para tema claro - botón "Volver al Inicio" */
+.theme-light .back-to-home-btn {
+  background: rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+  color: #1f2937 !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.theme-light .back-to-home-btn:hover {
+  background: rgba(0, 0, 0, 0.2) !important;
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.theme-light .back-to-home-btn svg {
+  color: #1f2937 !important;
+}
+
+.theme-light .back-to-home-btn span {
+  color: #1f2937 !important;
+}
+
+/* Estilos para tema oscuro en login */
+.dark-theme {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important;
+}
+
+.dark-theme .theme-login-card {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.dark-theme .theme-login-text {
+  color: #f1f5f9 !important;
+}
+
+.dark-theme .theme-login-text-secondary {
+  color: #cbd5e1 !important;
+}
+
+.dark-theme .theme-login-label {
+  color: #e2e8f0 !important;
+}
+
+.dark-theme .theme-login-input {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(148, 163, 184, 0.3) !important;
+  color: #f1f5f9 !important;
+}
+
+.dark-theme .theme-login-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.dark-theme .theme-login-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Ajustes para elementos específicos en tema oscuro */
+.dark-theme input[type="email"],
+.dark-theme input[type="password"] {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(148, 163, 184, 0.3) !important;
+  color: #f1f5f9 !important;
+}
+
+.dark-theme input[type="email"]::placeholder,
+.dark-theme input[type="password"]::placeholder {
+  color: #94a3b8 !important;
+}
+
+.dark-theme label {
+  color: #e2e8f0 !important;
+}
+
+.dark-theme .bg-red-500\/20 {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.dark-theme .text-red-300 {
+  color: #fca5a5 !important;
+}
+
+/* Estilos específicos para botón de Google */
+.dark-theme .bg-white {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #f1f5f9 !important;
+}
+
+.dark-theme .bg-white:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark-theme .text-gray-900 {
+  color: #f1f5f9 !important;
+}
+
+.dark-theme .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Asegurar que el texto de Google sea visible en ambos temas */
+button[type="button"] .text-gray-900 {
+  color: #111827 !important;
+}
+
+.dark-theme button[type="button"] .text-gray-900 {
+  color: #f1f5f9 !important;
 }
 </style>
 
