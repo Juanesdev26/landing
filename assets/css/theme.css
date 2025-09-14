@@ -1,0 +1,363 @@
+/**
+ * Sistema de temas para BylotoStore
+ * Soporte completo para modo claro y oscuro
+ */
+
+/* Variables CSS para tema claro */
+.theme-light {
+  --theme-bg-primary: #ffffff;
+  --theme-bg-secondary: #f8fafc;
+  --theme-bg-tertiary: #f1f5f9;
+  --theme-text-primary: #1e293b;
+  --theme-text-secondary: #64748b;
+  --theme-text-tertiary: #94a3b8;
+  --theme-border: #e2e8f0;
+  --theme-border-light: #f1f5f9;
+  --theme-shadow: rgba(0, 0, 0, 0.1);
+  --theme-shadow-lg: rgba(0, 0, 0, 0.15);
+}
+
+/* Variables CSS para tema oscuro */
+.theme-dark {
+  --theme-bg-primary: #0f172a;
+  --theme-bg-secondary: #1e293b;
+  --theme-bg-tertiary: #334155;
+  --theme-text-primary: #f8fafc;
+  --theme-text-secondary: #cbd5e1;
+  --theme-text-tertiary: #94a3b8;
+  --theme-border: #334155;
+  --theme-border-light: #475569;
+  --theme-shadow: rgba(0, 0, 0, 0.3);
+  --theme-shadow-lg: rgba(0, 0, 0, 0.4);
+}
+
+/* Clases de utilidad para temas */
+.theme-container {
+  background-color: var(--theme-bg-primary);
+  color: var(--theme-text-primary);
+}
+
+.theme-header {
+  background-color: rgba(var(--theme-bg-primary), 0.8);
+  border-color: var(--theme-border);
+}
+
+.theme-border {
+  border-color: var(--theme-border);
+}
+
+.theme-text-primary {
+  color: var(--theme-text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--theme-text-secondary);
+}
+
+.theme-text-tertiary {
+  color: var(--theme-text-tertiary);
+}
+
+.theme-nav-item {
+  color: var(--theme-text-secondary);
+}
+
+.theme-nav-item:hover {
+  color: #ec4899;
+}
+
+.theme-input {
+  background-color: var(--theme-bg-secondary);
+  color: var(--theme-text-primary);
+}
+
+.theme-button {
+  background-color: var(--theme-bg-secondary);
+  color: var(--theme-text-primary);
+  border: 1px solid var(--theme-border);
+}
+
+.theme-button:hover {
+  background-color: var(--theme-bg-tertiary);
+}
+
+.theme-button-hover {
+  background-color: var(--theme-bg-tertiary);
+}
+
+/* Secciones */
+.theme-section-bg {
+  background-color: var(--theme-bg-primary);
+}
+
+.theme-section-bg-alt {
+  background-color: var(--theme-bg-secondary);
+}
+
+.theme-dark .theme-section-bg-alt {
+  background-color: #1e293b;
+}
+
+.theme-light .theme-section-bg-alt {
+  background-color: #f8fafc;
+}
+
+.theme-section-overlay {
+  background: linear-gradient(to right, 
+    rgba(236, 72, 153, 0.05), 
+    rgba(147, 51, 234, 0.05)
+  );
+}
+
+/* Hero section */
+.theme-hero-bg {
+  background: linear-gradient(to bottom right, 
+    rgba(236, 72, 153, 0.1), 
+    var(--theme-bg-primary), 
+    rgba(147, 51, 234, 0.1)
+  );
+}
+
+/* Cards */
+.theme-card-bg {
+  background-color: var(--theme-bg-primary);
+  border: 1px solid var(--theme-border-light);
+}
+
+.theme-card-border {
+  border-color: var(--theme-border-light);
+}
+
+/* Login específico */
+.theme-login-bg {
+  background: linear-gradient(to bottom right, 
+    #0f172a, 
+    #7c3aed, 
+    #0f172a
+  );
+}
+
+.theme-dark .theme-login-bg {
+  background: linear-gradient(to bottom right, 
+    #0f172a, 
+    #7c3aed, 
+    #0f172a
+  );
+}
+
+.theme-light .theme-login-bg {
+  background: linear-gradient(to bottom right, 
+    #f8fafc, 
+    #e0e7ff, 
+    #f8fafc
+  );
+}
+
+.theme-login-card {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.theme-dark .theme-login-card {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.theme-light .theme-login-card {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.theme-login-border {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.theme-dark .theme-login-border {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.theme-light .theme-login-border {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.theme-login-text {
+  color: white;
+}
+
+.theme-dark .theme-login-text {
+  color: white;
+}
+
+.theme-light .theme-login-text {
+  color: #1e293b;
+}
+
+.theme-login-text-secondary {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.theme-dark .theme-login-text-secondary {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.theme-light .theme-login-text-secondary {
+  color: #64748b;
+}
+
+.theme-login-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.theme-dark .theme-login-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.theme-light .theme-login-label {
+  color: #374151;
+}
+
+.theme-login-input {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.theme-dark .theme-login-input {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.theme-light .theme-login-input {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.theme-login-placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.theme-dark .theme-login-placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.theme-light .theme-login-placeholder {
+  color: #9ca3af;
+}
+
+/* Transiciones suaves */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--theme-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-text-tertiary);
+}
+
+/* Mejoras para modo oscuro */
+.theme-dark {
+  color-scheme: dark;
+}
+
+.theme-light {
+  color-scheme: light;
+}
+
+/* Animaciones de tema */
+.theme-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estados de hover mejorados */
+.theme-dark .theme-button:hover {
+  background-color: #374151;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--theme-shadow);
+}
+
+.theme-light .theme-button:hover {
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--theme-shadow);
+}
+
+/* Mejoras para accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Contraste mejorado para modo oscuro */
+.theme-dark .theme-text-secondary {
+  color: #d1d5db;
+}
+
+.theme-dark .theme-border {
+  border-color: #4b5563;
+}
+
+/* Sombras adaptativas */
+.theme-card-bg {
+  box-shadow: 0 1px 3px var(--theme-shadow);
+}
+
+.theme-card-bg:hover {
+  box-shadow: 0 4px 12px var(--theme-shadow-lg);
+}
+
+/* CTA Section */
+.theme-cta-bg {
+  background: linear-gradient(to right, #ec4899, #8b5cf6);
+}
+
+.theme-dark .theme-cta-bg {
+  background: linear-gradient(to right, #ec4899, #8b5cf6);
+}
+
+.theme-light .theme-cta-bg {
+  background: linear-gradient(to right, #ec4899, #8b5cf6);
+}
+
+.theme-cta-overlay {
+  background: linear-gradient(to right, rgba(236, 72, 153, 0.2), rgba(147, 51, 234, 0.2));
+}
+
+.theme-cta-text {
+  color: white;
+}
+
+.theme-cta-text-secondary {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.theme-cta-input {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.theme-cta-input-text {
+  color: #1e293b;
+}
+
+.theme-cta-input-placeholder {
+  color: #64748b;
+}
+
+.theme-cta-button {
+  background-color: white;
+  color: #ec4899;
+}
+
+.theme-cta-button:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+}

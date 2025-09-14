@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+  <div class="min-h-screen transition-colors duration-300 theme-container">
     <!-- Header -->
-    <header class="bg-white/80 backdrop-blur-md shadow-lg border-b border-pink-100 sticky top-0 z-50">
+    <header class="theme-header backdrop-blur-md shadow-lg border-b theme-border sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-20">
           <!-- Logo -->
@@ -18,19 +18,19 @@
 
           <!-- Navigation -->
           <nav class="hidden md:flex space-x-8">
-            <button v-if="isUser" @click="navigateToOffers" class="relative text-gray-700 hover:text-pink-600 transition-colors font-medium group">
+            <button v-if="isUser" @click="navigateToOffers" class="relative theme-nav-item hover:text-pink-600 transition-colors font-medium group">
               Mis Ofertas
               <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600 group-hover:w-full transition-all duration-300"></span>
             </button>
-            <NuxtLink to="/shop" class="relative text-gray-700 hover:text-pink-600 transition-colors font-medium group">
+            <NuxtLink to="/shop" class="relative theme-nav-item hover:text-pink-600 transition-colors font-medium group">
               Productos
               <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600 group-hover:w-full transition-all duration-300"></span>
             </NuxtLink>
-            <NuxtLink to="/shop/category/1" class="relative text-gray-700 hover:text-pink-600 transition-colors font-medium group">
+            <NuxtLink to="/shop/category/1" class="relative theme-nav-item hover:text-pink-600 transition-colors font-medium group">
               Categorías
               <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600 group-hover:w-full transition-all duration-300"></span>
             </NuxtLink>
-            <NuxtLink to="/about" class="relative text-gray-700 hover:text-pink-600 transition-colors font-medium group">
+            <NuxtLink to="/about" class="relative theme-nav-item hover:text-pink-600 transition-colors font-medium group">
               Nosotros
               <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600 group-hover:w-full transition-all duration-300"></span>
             </NuxtLink>
@@ -43,13 +43,18 @@
               <input 
                 type="text" 
                 placeholder="Buscar productos..." 
-                class="w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
+                class="w-64 pl-10 pr-4 py-2 border theme-border rounded-full focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent theme-input transition-colors"
               >
-              <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+              <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-2.5 w-5 h-5 theme-text-secondary" />
             </div>
 
+            <!-- Theme Toggle -->
+            <button @click="toggleTheme" class="p-2 rounded-full theme-button hover:theme-button-hover transition-all duration-300">
+              <Icon :name="isDark ? 'heroicons:sun' : 'heroicons:moon'" class="w-5 h-5 theme-text-primary" />
+            </button>
+
             <!-- Cart (solo usuarios) -->
-            <button v-if="isUser" @click="navigateToCart" class="relative text-gray-700 hover:text-pink-600 transition-colors group">
+            <button v-if="isUser" @click="navigateToCart" class="relative theme-text-primary hover:text-pink-600 transition-colors group">
               <div class="p-2 rounded-full bg-gradient-to-r from-pink-100 to-purple-100 group-hover:from-pink-200 group-hover:to-purple-200 transition-all duration-300">
                 <Icon name="heroicons:shopping-cart" class="w-6 h-6" />
               </div>
@@ -64,7 +69,7 @@
             </NuxtLink>
 
             <!-- Logout cuando hay sesión -->
-            <button v-else @click="handleLogout" class="bg-gray-100 text-gray-700 px-6 py-2 rounded-full font-medium hover:bg-gray-200 transition-all duration-300 shadow-sm">
+            <button v-else @click="handleLogout" class="theme-button text-theme-text-primary px-6 py-2 rounded-full font-medium hover:theme-button-hover transition-all duration-300 shadow-sm">
               Cerrar sesión
             </button>
           </div>
@@ -184,6 +189,14 @@ const authUser = useSupabaseUser()
 const { logout } = useAuth()
 const { user } = useAuth()
 const isUser = computed(() => user.value?.role === 'user')
+
+// Tema
+const { theme, isDark, toggleTheme, initTheme } = useTheme()
+
+// Inicializar tema al montar
+onMounted(() => {
+  initTheme()
+})
 
 // Key para forzar re-renderizado cuando sea necesario
 const refreshKey = ref(0)

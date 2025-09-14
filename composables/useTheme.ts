@@ -10,10 +10,12 @@ export const useTheme = () => {
       const savedTheme = localStorage.getItem('theme')
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       
-      if (savedTheme) {
+      if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
         theme.value = savedTheme as 'light' | 'dark'
       } else if (systemPrefersDark) {
         theme.value = 'dark'
+      } else {
+        theme.value = 'light'
       }
       
       applyTheme()
@@ -24,15 +26,24 @@ export const useTheme = () => {
   const applyTheme = () => {
     if (process.client) {
       // Remover clases anteriores
-      document.documentElement.classList.remove('theme-light', 'theme-dark')
+      document.documentElement.classList.remove('theme-light', 'theme-dark', 'dark')
       
       // Agregar clase del tema actual
       document.documentElement.classList.add(`theme-${theme.value}`)
       
       // También mantener compatibilidad con dark mode de Tailwind
-      document.documentElement.classList.toggle('dark', isDark.value)
+      if (isDark.value) {
+        document.documentElement.classList.add('dark')
+      }
       
+      // Guardar en localStorage
       localStorage.setItem('theme', theme.value)
+      
+      // Actualizar meta theme-color para móviles
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', isDark.value ? '#0f172a' : '#ffffff')
+      }
     }
   }
 
@@ -44,16 +55,42 @@ export const useTheme = () => {
 
   // Establecer tema específico
   const setTheme = (newTheme: 'light' | 'dark') => {
-    theme.value = newTheme
-    applyTheme()
+    if (newTheme === 'light' || newTheme === 'dark') {
+      theme.value = newTheme
+      applyTheme()
+    }
+  }
+
+  // Escuchar cambios en la preferencia del sistema
+  const watchSystemTheme = () => {
+    if (process.client) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      
+      const handleChange = (e: MediaQueryListEvent) => {
+        // Solo cambiar si no hay tema guardado en localStorage
+        const savedTheme = localStorage.getItem('theme')
+        if (!savedTheme) {
+          theme.value = e.matches ? 'dark' : 'light'
+          applyTheme()
+        }
+      }
+      
+      mediaQuery.addEventListener('change', handleChange)
+      
+      // Cleanup function
+      return () => {
+        mediaQuery.removeEventListener('change', handleChange)
+      }
+    }
   }
 
   return {
-    theme,
+    theme: readonly(theme),
     isDark,
     toggleTheme,
     setTheme,
-    initTheme
+    initTheme,
+    watchSystemTheme
   }
 }
 

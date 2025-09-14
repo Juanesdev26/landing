@@ -1,24 +1,24 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+  <div class="min-h-screen theme-container">
     <div class="max-w-6xl mx-auto p-6">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Mi Perfil</h1>
+        <h1 class="text-2xl font-bold theme-text-primary">Mi Perfil</h1>
         <NuxtLink to="/shop/cart" class="inline-flex items-center px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">
           <Icon name="heroicons:shopping-cart" class="w-5 h-5 mr-2" /> Ir al carrito ({{ cart.count }})
         </NuxtLink>
       </div>
 
       <!-- Mis pedidos -->
-      <div class="bg-white rounded-lg shadow-sm p-4 mb-8">
+      <div class="theme-card-bg rounded-lg shadow-sm p-4 mb-8">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-semibold text-gray-900">Mis pedidos</h2>
+          <h2 class="text-lg font-semibold theme-text-primary">Mis pedidos</h2>
           <button @click="fetchMyOrders" class="text-pink-600 hover:text-pink-700 text-sm">Actualizar</button>
         </div>
-        <div v-if="ordersLoading" class="text-gray-600">Cargando pedidos...</div>
+        <div v-if="ordersLoading" class="theme-text-secondary">Cargando pedidos...</div>
         <div v-else>
-          <div v-if="orders.length === 0" class="text-gray-600">Aún no tienes pedidos.</div>
+          <div v-if="orders.length === 0" class="theme-text-secondary">Aún no tienes pedidos.</div>
           <div v-else class="space-y-4">
-            <div v-for="o in orders" :key="o.id_order" class="border rounded-lg p-4">
+            <div v-for="o in orders" :key="o.id_order" class="theme-card-border rounded-lg p-4">
               <div class="flex items-center justify-between">
                 <div class="space-y-1">
                   <div class="text-sm text-gray-500">ID: {{ o.id_order }}</div>

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+  <div class="min-h-screen theme-login-bg relative overflow-hidden">
     <!-- Animated Background -->
     <div class="absolute inset-0 overflow-hidden">
       <div class="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
@@ -17,7 +17,7 @@
           </NuxtLink>
         </div>
         <!-- Login Card -->
-        <div class="bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8">
+        <div class="theme-login-card backdrop-blur-xl rounded-2xl shadow-2xl theme-login-border p-8">
           <!-- Header -->
           <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-6 shadow-lg">
@@ -26,15 +26,15 @@
               </svg>
             </div>
             
-            <h1 class="text-3xl font-bold text-white mb-2">Iniciar Sesión</h1>
-            <p class="text-gray-300">Accede a tu cuenta de administrador</p>
+            <h1 class="text-3xl font-bold theme-login-text mb-2">Iniciar Sesión</h1>
+            <p class="theme-login-text-secondary">Accede a tu cuenta de administrador</p>
           </div>
 
           <!-- Form -->
           <form @submit.prevent="handleLogin" class="space-y-6">
             <!-- Email Field -->
             <div class="space-y-2">
-              <label for="email" class="block text-sm font-medium text-gray-200">
+              <label for="email" class="block text-sm font-medium theme-login-label">
                 Correo Electrónico
               </label>
               <div class="relative">
@@ -48,7 +48,7 @@
                   v-model="email"
                   type="email"
                   required
-                  class="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
+                  class="w-full pl-10 pr-4 py-3 theme-login-input border theme-login-border rounded-xl theme-login-text placeholder-theme-login-placeholder focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
                   placeholder="admin@ejemplo.com"
                   :disabled="loading"
                 />
