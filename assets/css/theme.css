@@ -240,9 +240,13 @@
   color: #9ca3af;
 }
 
-/* Transiciones suaves */
+/* Transiciones ultra rápidas y fluidas */
 * {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Scrollbar personalizado */
@@ -272,9 +276,21 @@
   color-scheme: light;
 }
 
-/* Animaciones de tema */
+/* Animaciones de tema ultra rápidas */
 .theme-transition {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Transiciones específicas para elementos críticos */
+.theme-container,
+.theme-header,
+.theme-card-bg,
+.theme-button,
+.theme-input {
+  transition: background-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Estados de hover mejorados */

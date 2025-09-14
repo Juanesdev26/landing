@@ -3,6 +3,25 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <h1 class="text-3xl font-bold text-gray-900 mb-8">Carrito de Compras</h1>
 
+      <!-- Resumen rápido del carrito -->
+      <div v-if="cart.items.length > 0" class="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-6 mb-8 border border-pink-200">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
+              <Icon name="heroicons:shopping-cart" class="w-6 h-6 text-pink-600" />
+            </div>
+            <div>
+              <h2 class="text-lg font-semibold text-gray-900">Tu Carrito</h2>
+              <p class="text-sm text-gray-600">{{ cart.count }} producto(s) • Total: {{ formatCOP(cart.total) }}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-pink-600">{{ formatCOP(cart.total) }}</div>
+            <div class="text-sm text-gray-500">Incluye envío e impuestos</div>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2">
           <div class="bg-white rounded-lg shadow-sm">
@@ -89,20 +108,78 @@
               </NuxtLink>
             </div>
             <div class="mt-8">
-              <h3 class="text-sm font-semibold text-gray-900 mb-2">Tus pedidos recientes</h3>
-              <div v-if="myOrders.length === 0" class="text-gray-600 text-sm">Aún no tienes pedidos.</div>
-              <div v-else class="space-y-3 max-h-64 overflow-auto">
-                <div v-for="o in myOrders" :key="o.id_order" class="border rounded p-3 text-sm">
-                  <div class="flex items-center justify-between">
-                    <NuxtLink :to="`/orders/${o.id_order}`" class="font-medium text-pink-600 hover:text-pink-700">#{{ (o.id_order || '').slice(0,8) }}</NuxtLink>
-                    <span :class="getStatusClass(o.status)" class="px-2 py-0.5 rounded">{{ getStatusText(o.status) }}</span>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Mis Pedidos</h3>
+                <button @click="loadMyOrders" class="text-pink-600 hover:text-pink-700 text-sm font-medium">
+                  <Icon name="heroicons:arrow-path" class="w-4 h-4 inline mr-1" />
+                  Actualizar
+                </button>
+              </div>
+              
+              <div v-if="myOrders.length === 0" class="text-center py-8 text-gray-600">
+                <Icon name="heroicons:shopping-bag" class="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p class="text-sm">Aún no tienes pedidos.</p>
+                <p class="text-xs text-gray-500 mt-1">Tus pedidos aparecerán aquí después de completar una compra.</p>
+              </div>
+              
+              <div v-else class="space-y-4 max-h-96 overflow-auto">
+                <div v-for="o in myOrders" :key="o.id_order" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <!-- Header del pedido -->
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                      <NuxtLink :to="`/orders/${o.id_order}`" class="font-semibold text-pink-600 hover:text-pink-700">
+                        Pedido #{{ (o.id_order || '').slice(0,8) }}
+                      </NuxtLink>
+                      <span class="text-xs text-gray-500">{{ formatDate(o.created_at) }}</span>
+                    </div>
+                    <span :class="getStatusClass(o.status)" class="px-2 py-1 text-xs font-medium rounded-full">
+                      {{ getStatusText(o.status) }}
+                    </span>
                   </div>
-                  <div class="text-gray-600">{{ formatDate(o.created_at) }} · {{ o.order_items?.length || 0 }} productos</div>
-                  <div class="flex items-center justify-between">
-                    <div class="text-pink-600 font-semibold">{{ formatCOP(o.total_amount || 0) }}</div>
-                    <button v-if="o.status === 'pending'" @click="cancel(o.id_order)" class="text-red-600 hover:text-red-700">Cancelar</button>
+                  
+                  <!-- Productos del pedido -->
+                  <div class="space-y-2 mb-3">
+                    <div v-for="item in (o.order_items || []).slice(0, 2)" :key="item.id_order_item" class="flex items-center gap-2 text-sm">
+                      <div class="w-8 h-8 bg-white rounded flex items-center justify-center overflow-hidden">
+                        <img v-if="item.product?.image_url" :src="item.product.image_url" :alt="item.product?.name" class="w-full h-full object-cover" />
+                        <Icon v-else name="heroicons:cube" class="w-4 h-4 text-pink-500" />
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-900 truncate">{{ item.product?.name }}</div>
+                        <div class="text-xs text-gray-500">Cant: {{ item.quantity }}</div>
+                      </div>
+                      <div class="text-xs font-medium text-gray-900">{{ formatCOP(item.total_price || (item.quantity * item.unit_price)) }}</div>
+                    </div>
+                    <div v-if="(o.order_items || []).length > 2" class="text-xs text-gray-500 pl-10">
+                      +{{ (o.order_items || []).length - 2 }} producto(s) más
+                    </div>
+                  </div>
+                  
+                  <!-- Footer del pedido -->
+                  <div class="flex items-center justify-between pt-2 border-t border-gray-200">
+                    <div class="text-sm">
+                      <span class="text-gray-600">{{ o.order_items?.length || 0 }} producto(s)</span>
+                      <span class="text-gray-400 mx-2">•</span>
+                      <span class="text-gray-600">Total: </span>
+                      <span class="font-semibold text-pink-600">{{ formatCOP(o.total_amount || 0) }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <NuxtLink :to="`/orders/${o.id_order}`" class="text-xs text-pink-600 hover:text-pink-700 font-medium">
+                        Ver detalles
+                      </NuxtLink>
+                      <button v-if="o.status === 'pending'" @click="cancel(o.id_order)" class="text-xs text-red-600 hover:text-red-700 font-medium">
+                        Cancelar
+                      </button>
+                    </div>
                   </div>
                 </div>
+              </div>
+              
+              <!-- Ver todos los pedidos -->
+              <div v-if="myOrders.length > 0" class="mt-4 text-center">
+                <NuxtLink to="/user/orders" class="text-sm text-pink-600 hover:text-pink-700 font-medium">
+                  Ver todos mis pedidos
+                </NuxtLink>
               </div>
             </div>
           </div>

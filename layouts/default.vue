@@ -49,7 +49,7 @@
             </div>
 
             <!-- Theme Toggle -->
-            <button @click="toggleTheme" class="p-2 rounded-full theme-button hover:theme-button-hover transition-all duration-300">
+            <button @click="optimizedToggleTheme" class="p-2 rounded-full theme-button hover:theme-button-hover transition-all duration-300">
               <Icon :name="isDark ? 'heroicons:sun' : 'heroicons:moon'" class="w-5 h-5 theme-text-primary" />
             </button>
 
@@ -192,6 +192,10 @@ const isUser = computed(() => user.value?.role === 'user')
 
 // Tema
 const { theme, isDark, toggleTheme, initTheme } = useTheme()
+const { $themeOptimizer } = useNuxtApp()
+
+// Usar toggle optimizado si está disponible
+const optimizedToggleTheme = $themeOptimizer?.optimizedToggleTheme || toggleTheme
 
 // Inicializar tema al montar
 onMounted(() => {

@@ -104,7 +104,7 @@
             </div>
             <div class="ml-auto flex items-center gap-2">
               <button 
-                @click="toggleTheme" 
+                @click="optimizedToggleTheme" 
                 class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                 :title="isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
               >
@@ -150,6 +150,10 @@ const route = useRoute()
 
 // Composable para manejar el tema
 const { isDark, toggleTheme } = useTheme()
+const { $themeOptimizer } = useNuxtApp()
+
+// Usar toggle optimizado si está disponible
+const optimizedToggleTheme = $themeOptimizer?.optimizedToggleTheme || toggleTheme
 // Composable de autenticación
 const { logout } = useAuth()
 

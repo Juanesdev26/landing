@@ -22,32 +22,43 @@ export const useTheme = () => {
     }
   }
 
-  // Aplicar tema al documento
+  // Aplicar tema al documento (optimizado para cambios ultra rápidos)
   const applyTheme = () => {
     if (process.client) {
-      // Remover clases anteriores
-      document.documentElement.classList.remove('theme-light', 'theme-dark', 'dark')
-      
-      // Agregar clase del tema actual
-      document.documentElement.classList.add(`theme-${theme.value}`)
-      
-      // También mantener compatibilidad con dark mode de Tailwind
-      if (isDark.value) {
-        document.documentElement.classList.add('dark')
-      }
-      
-      // Guardar en localStorage
-      localStorage.setItem('theme', theme.value)
-      
-      // Actualizar meta theme-color para móviles
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]')
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', isDark.value ? '#0f172a' : '#ffffff')
-      }
+      // Usar requestAnimationFrame para cambios más fluidos
+      requestAnimationFrame(() => {
+        // Remover clases anteriores
+        document.documentElement.classList.remove('theme-light', 'theme-dark', 'dark')
+        
+        // Agregar clase del tema actual
+        document.documentElement.classList.add(`theme-${theme.value}`)
+        
+        // También mantener compatibilidad con dark mode de Tailwind
+        if (isDark.value) {
+          document.documentElement.classList.add('dark')
+        }
+        
+        // Actualizar meta theme-color para móviles
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+        if (metaThemeColor) {
+          metaThemeColor.setAttribute('content', isDark.value ? '#0f172a' : '#ffffff')
+        }
+        
+        // Guardar en localStorage de forma asíncrona para no bloquear
+        if (typeof window.requestIdleCallback === 'function') {
+          requestIdleCallback(() => {
+            localStorage.setItem('theme', theme.value)
+          })
+        } else {
+          setTimeout(() => {
+            localStorage.setItem('theme', theme.value)
+          }, 0)
+        }
+      })
     }
   }
 
-  // Cambiar tema
+  // Cambiar tema (ultra rápido)
   const toggleTheme = () => {
     theme.value = isDark.value ? 'light' : 'dark'
     applyTheme()
