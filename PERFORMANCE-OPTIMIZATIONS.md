@@ -86,3 +86,4 @@
 2. Recopilar feedback de usuarios
 3. Ajustar thresholds según necesidades
 4. Considerar lazy loading adicional si es necesario
+

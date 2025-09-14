@@ -186,6 +186,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de Pago -->
+    <MercadoPagoModal 
+      v-if="showPaymentModal"
+      @close="closePaymentModal"
+      @success="onPaymentSuccess"
+    />
   </div>
 </template>
 
