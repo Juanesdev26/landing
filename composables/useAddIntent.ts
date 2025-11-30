@@ -1,6 +1,13 @@
 export interface AddIntentPayload {
   productId?: string
   quantity?: number
+  product?: {
+    id_product: string
+    name: string
+    price: number
+    image_url?: string
+    sku?: string
+  }
 }
 
 const KEY = 'add-intent'
@@ -26,7 +33,3 @@ export const useAddIntent = () => {
 
   return { setAddIntent, consumeAddIntent }
 }
-
-
-
-
