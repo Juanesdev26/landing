@@ -11,24 +11,21 @@
   --theme-text-primary: #1e293b;
   --theme-text-secondary: #64748b;
   --theme-text-tertiary: #94a3b8;
-  --theme-border: #e2e8f0;
-  --theme-border-light: #f1f5f9;
-  --theme-shadow: rgba(0, 0, 0, 0.1);
   --theme-shadow-lg: rgba(0, 0, 0, 0.15);
 }
 
-/* Variables CSS para tema oscuro */
+/* Variables CSS para tema oscuro - Negro Minimalista */
 .theme-dark {
-  --theme-bg-primary: #0f172a;
-  --theme-bg-secondary: #1e293b;
-  --theme-bg-tertiary: #334155;
-  --theme-text-primary: #f8fafc;
-  --theme-text-secondary: #cbd5e1;
-  --theme-text-tertiary: #94a3b8;
-  --theme-border: #334155;
-  --theme-border-light: #475569;
-  --theme-shadow: rgba(0, 0, 0, 0.3);
-  --theme-shadow-lg: rgba(0, 0, 0, 0.4);
+  --theme-bg-primary: #09090b; /* Negro suave (Zinc 950) */
+  --theme-bg-secondary: #18181b; /* Gris muy oscuro (Zinc 900) */
+  --theme-bg-tertiary: #27272a; /* Gris oscuro (Zinc 800) */
+  --theme-text-primary: #fafafa; /* Blanco casi puro */
+  --theme-text-secondary: #a1a1aa; /* Gris medio (Zinc 400) */
+  --theme-text-tertiary: #71717a; /* Gris oscuro (Zinc 500) */
+  --theme-border: #27272a; /* Borde sutil */
+  --theme-border-light: #3f3f46; /* Borde más claro */
+  --theme-shadow: rgba(0, 0, 0, 0.5);
+  --theme-shadow-lg: rgba(0, 0, 0, 0.7);
 }
 
 /* Clases de utilidad para temas */
@@ -44,10 +41,6 @@
 
 .theme-border {
   border-color: var(--theme-border);
-}
-
-.theme-text-primary {
-  color: var(--theme-text-primary);
 }
 
 .theme-text-secondary {
@@ -130,27 +123,15 @@
 
 /* Login específico */
 .theme-login-bg {
-  background: linear-gradient(to bottom right, 
-    #0f172a, 
-    #7c3aed, 
-    #0f172a
-  );
+  background: linear-gradient(to bottom right, #0f0518, #2e1065, #0f0518);
 }
 
 .theme-dark .theme-login-bg {
-  background: linear-gradient(to bottom right, 
-    #0f172a, 
-    #7c3aed, 
-    #0f172a
-  );
+  background: linear-gradient(to bottom right, #0f0518, #4c1d95, #0f0518);
 }
 
 .theme-light .theme-login-bg {
-  background: linear-gradient(to bottom right, 
-    #f8fafc, 
-    #e0e7ff, 
-    #f8fafc
-  );
+  background: linear-gradient(to bottom right, #f8fafc, #e0e7ff, #f8fafc);
 }
 
 .theme-login-card {
@@ -242,11 +223,11 @@
 
 /* Transiciones ultra rápidas y fluidas */
 * {
-  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
-              color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
-              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Scrollbar personalizado */
@@ -288,9 +269,9 @@
 .theme-button,
 .theme-input {
   transition: background-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Estados de hover mejorados */
@@ -346,7 +327,11 @@
 }
 
 .theme-cta-overlay {
-  background: linear-gradient(to right, rgba(236, 72, 153, 0.2), rgba(147, 51, 234, 0.2));
+  background: linear-gradient(
+    to right,
+    rgba(236, 72, 153, 0.2),
+    rgba(147, 51, 234, 0.2)
+  );
 }
 
 .theme-cta-text {
