@@ -3,6 +3,26 @@
  * Soporte completo para modo claro y oscuro
  */
 
+/* Variables CSS base con transiciones suaves */
+:root {
+  /* Valores por defecto (light) */
+  --theme-bg-primary: #ffffff;
+  --theme-bg-secondary: #f8fafc;
+  --theme-bg-tertiary: #f1f5f9;
+  --theme-text-primary: #1e293b;
+  --theme-text-secondary: #64748b;
+  --theme-text-tertiary: #94a3b8;
+  --theme-border: #e5e7eb;
+  --theme-border-light: #e5e7eb;
+  --theme-shadow: rgba(0, 0, 0, 0.1);
+  --theme-shadow-lg: rgba(0, 0, 0, 0.15);
+  
+  /* Transiciones suaves para todas las propiedades de tema */
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Variables CSS para tema claro */
 .theme-light {
   --theme-bg-primary: #ffffff;
@@ -11,6 +31,9 @@
   --theme-text-primary: #1e293b;
   --theme-text-secondary: #64748b;
   --theme-text-tertiary: #94a3b8;
+  --theme-border: #e5e7eb;
+  --theme-border-light: #e5e7eb;
+  --theme-shadow: rgba(0, 0, 0, 0.1);
   --theme-shadow-lg: rgba(0, 0, 0, 0.15);
 }
 
@@ -28,46 +51,65 @@
   --theme-shadow-lg: rgba(0, 0, 0, 0.7);
 }
 
-/* Clases de utilidad para temas */
+/* Clases de utilidad para temas con transiciones suaves */
 .theme-container {
   background-color: var(--theme-bg-primary);
   color: var(--theme-text-primary);
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: background-color, color;
 }
 
 .theme-header {
-  background-color: rgba(var(--theme-bg-primary), 0.8);
+  background-color: var(--theme-bg-primary);
   border-color: var(--theme-border);
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: background-color, border-color;
 }
 
 .theme-border {
   border-color: var(--theme-border);
+  transition: border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-text-secondary {
   color: var(--theme-text-secondary);
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-text-tertiary {
   color: var(--theme-text-tertiary);
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-nav-item {
   color: var(--theme-text-secondary);
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-nav-item:hover {
   color: #ec4899;
+  transition: color 0.2s ease;
 }
 
 .theme-input {
   background-color: var(--theme-bg-secondary);
   color: var(--theme-text-primary);
+  border-color: var(--theme-border);
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-button {
   background-color: var(--theme-bg-secondary);
   color: var(--theme-text-primary);
   border: 1px solid var(--theme-border);
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.2s ease;
 }
 
 .theme-button:hover {
@@ -221,13 +263,30 @@
   color: #9ca3af;
 }
 
-/* Transiciones ultra rápidas y fluidas */
-* {
-  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+/* Transiciones optimizadas y fluidas para cambio de tema */
+html {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Transiciones suaves para elementos que cambian con el tema */
+body,
+.theme-transition-element {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Optimización: solo transiciones necesarias para hover/interacción */
+button,
+a,
+input,
+select,
+textarea {
+  transition: background-color 0.2s ease,
+              color 0.2s ease,
+              border-color 0.2s ease,
+              transform 0.2s ease,
+              box-shadow 0.2s ease;
 }
 
 /* Scrollbar personalizado */
@@ -257,21 +316,30 @@
   color-scheme: light;
 }
 
-/* Animaciones de tema ultra rápidas */
-.theme-transition {
-  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+/* Clase para indicar que se está cambiando el tema */
+.theme-transitioning {
+  /* Forzar GPU acceleration para transiciones más suaves */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
-/* Transiciones específicas para elementos críticos */
-.theme-container,
-.theme-header,
-.theme-card-bg,
-.theme-button,
-.theme-input {
-  transition: background-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+/* Animaciones de tema optimizadas */
+.theme-transition {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Transiciones específicas para elementos críticos con tema */
+.theme-card-bg {
+  background-color: var(--theme-bg-primary);
+  border-color: var(--theme-border-light);
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: background-color, border-color;
+  contain: layout style paint;
 }
 
 /* Estados de hover mejorados */

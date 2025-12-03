@@ -283,11 +283,21 @@ select:focus {
 /* Optimizaciones de rendimiento */
 html {
   scroll-behavior: smooth;
+  /* Forzar GPU acceleration para transiciones de tema */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Evitar efectos scroll-linked problemáticos */
 * {
   scroll-behavior: auto;
+}
+
+/* Optimizar transiciones de tema globalmente */
+html,
+body {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Optimizar animaciones */
@@ -299,5 +309,21 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Performance: contain para secciones */
+section {
+  contain: layout style;
+}
+
+/* Performance: will-change solo cuando sea necesario */
+.hover-lift,
+.group:hover {
+  will-change: transform;
+}
+
+.hover-lift:hover,
+.group:hover {
+  will-change: auto;
 }
 

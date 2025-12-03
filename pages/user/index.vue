@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen theme-container">
+  <div class="min-h-screen">
     <!-- VISTA CUSTOMER (Lookbook / Catálogo Visual) -->
-    <div v-if="isCustomer" class="pb-20 relative">
+    <div v-if="isCustomer" class="pb-20 relative theme-container">
       <!-- Animated Background (Blobs) -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -145,7 +145,7 @@
     </div>
 
     <!-- VISTA USER (Funcional / Carrito) -->
-    <div v-else class="max-w-6xl mx-auto p-6">
+    <div v-else class="max-w-6xl mx-auto p-6 theme-container">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold theme-text-primary">Mi Perfil</h1>
         <NuxtLink

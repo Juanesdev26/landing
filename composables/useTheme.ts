@@ -22,38 +22,51 @@ export const useTheme = () => {
     }
   }
 
-  // Aplicar tema al documento (optimizado para cambios ultra rápidos)
+  // Aplicar tema al documento (optimizado para transiciones fluidas)
   const applyTheme = () => {
     if (process.client) {
-      // Usar requestAnimationFrame para cambios más fluidos
+      // Usar double RAF para asegurar que el navegador esté listo para la transición
       requestAnimationFrame(() => {
-        // Remover clases anteriores
-        document.documentElement.classList.remove('theme-light', 'theme-dark', 'dark')
-        
-        // Agregar clase del tema actual
-        document.documentElement.classList.add(`theme-${theme.value}`)
-        
-        // También mantener compatibilidad con dark mode de Tailwind
-        if (isDark.value) {
-          document.documentElement.classList.add('dark')
-        }
-        
-        // Actualizar meta theme-color para móviles
-        const metaThemeColor = document.querySelector('meta[name="theme-color"]')
-        if (metaThemeColor) {
-          metaThemeColor.setAttribute('content', isDark.value ? '#0f172a' : '#ffffff')
-        }
-        
-        // Guardar en localStorage de forma asíncrona para no bloquear
-        if (typeof window.requestIdleCallback === 'function') {
-          requestIdleCallback(() => {
-            localStorage.setItem('theme', theme.value)
-          })
-        } else {
+        requestAnimationFrame(() => {
+          const html = document.documentElement
+          
+          // Agregar clase de transición antes de cambiar
+          html.classList.add('theme-transitioning')
+          
+          // Remover clases anteriores
+          html.classList.remove('theme-light', 'theme-dark', 'dark')
+          
+          // Agregar clase del tema actual
+          html.classList.add(`theme-${theme.value}`)
+          
+          // También mantener compatibilidad con dark mode de Tailwind
+          if (isDark.value) {
+            html.classList.add('dark')
+          }
+          
+          // Remover clase de transición después de un breve delay
           setTimeout(() => {
-            localStorage.setItem('theme', theme.value)
-          }, 0)
-        }
+            html.classList.remove('theme-transitioning')
+          }, 50)
+          
+          // Actualizar meta theme-color para móviles (con transición suave)
+          const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+          if (metaThemeColor) {
+            const newColor = isDark.value ? '#0f172a' : '#ffffff'
+            metaThemeColor.setAttribute('content', newColor)
+          }
+          
+          // Guardar en localStorage de forma asíncrona para no bloquear
+          if (typeof window.requestIdleCallback === 'function') {
+            requestIdleCallback(() => {
+              localStorage.setItem('theme', theme.value)
+            })
+          } else {
+            setTimeout(() => {
+              localStorage.setItem('theme', theme.value)
+            }, 0)
+          }
+        })
       })
     }
   }

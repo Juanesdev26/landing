@@ -1,7 +1,8 @@
 <template>
   <div class="min-h-screen transition-colors duration-300 theme-container">
-    <!-- Header -->
+    <!-- Header (oculto para customers) -->
     <header
+      v-if="!isCustomer"
       class="theme-header backdrop-blur-md shadow-lg border-b theme-border sticky top-0 z-50"
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,19 +61,6 @@
 
           <!-- User Menu -->
           <div class="flex items-center space-x-6">
-            <!-- Search -->
-            <div class="relative hidden lg:block">
-              <input
-                type="text"
-                placeholder="Buscar productos..."
-                class="w-64 pl-10 pr-4 py-2 border theme-border rounded-full focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent theme-input transition-colors"
-              />
-              <Icon
-                name="heroicons:magnifying-glass"
-                class="absolute left-3 top-2.5 w-5 h-5 theme-text-secondary"
-              />
-            </div>
-
             <!-- Theme Toggle -->
             <button
               @click="optimizedToggleTheme"
