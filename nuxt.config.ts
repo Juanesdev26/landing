@@ -41,163 +41,40 @@ export default defineNuxtConfig({
     { path: "~/components", pathPrefix: false }
   ],
   
-  // Configuración mínima para estabilidad
+  // Configuración experimental (revertida a valores seguros)
   experimental: {
-    payloadExtraction: false,
-    renderJsonPayloads: false,
-    componentIslands: false,
-    inlineSSRStyles: false, // Deshabilitado para evitar problemas
-    viewTransition: false,
-    typedPages: false, // Deshabilitado temporalmente
-    appManifest: false,
-    headNext: false // Deshabilitado temporalmente
-  },
-  
-  // Configuración de renderizado ultra optimizada
-  render: {
-    bundleRenderer: {
-      shouldPreload: () => false, // Deshabilitado temporalmente
-      shouldPrefetch: () => false, // Deshabilitado temporalmente
-      // Optimizaciones adicionales
-      resourceHints: true,
-      runInNewContext: false
-    }
-  },
-  
-  // Configuración de la aplicación
-  app: {
-    head: {
-      title: "BylotoStore - Tu E-commerce Femenino",
-      meta: [
-        { charset: "utf-8" },
-        { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { name: "description", content: "Tu tienda de belleza y moda femenina con los mejores productos seleccionados especialmente para la mujer moderna y elegante." },
-        { name: "theme-color", content: "#ec4899" }
-      ],
-      link: [
-        { rel: "icon", href: "/favicon.ico" },
-        // Fuentes deshabilitadas temporalmente para evitar errores 404
-        // { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        // { rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "" },
-        // { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap&subset=latin" }
-      ],
-      script: [
-        {
-          // Establecer tema lo antes posible para evitar FOUC y layout thrash
-          tagPosition: 'head',
-          children: `;(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var e=document.documentElement;e.classList.remove('theme-light','theme-dark','dark');if(d){e.classList.add('theme-dark');e.classList.add('dark');}else{e.classList.add('theme-light');}}catch(_e){}})();`
-        }
-      ]
-    },
-    pageTransition: { name: 'page', mode: 'out-in' },
-    keepalive: false
+    payloadExtraction: true, // Necesario para hidratación correcta
+    renderJsonPayloads: true,
+    inlineSSRStyles: true, // Evita FOUC
   },
 
-  // Color Mode Nuxt UI
-  colorMode: { preference: "light" },
-
-  // UI Nuxt Module
-  ui: {
-    colorMode: true,
-    fonts: true,
-    theme: {
-      transitions: true,
-    },
-  },
-  
-  // Configuración de runtime
-  runtimeConfig: {
-    supabaseServiceKey: process.env.NUXT_SUPABASE_SERVICE_KEY,
-    public: {
-      supabaseUrl: process.env.NUXT_SUPABASE_URL,
-      supabaseKey: process.env.NUXT_SUPABASE_KEY,
-    }
-  },
-  
-  // Configuración de build ultra optimizada
+  // Configuración de build
   build: {
     transpile: ["vue-chartjs", "@iconify/utils"],
-    // Configuración simplificada
-    analyze: false,
-    extractCSS: false, // Simplificado
-    optimization: {
-      splitChunks: {
-        layouts: false, // Simplificado
-        pages: false,
-        commons: false
-      }
-    }
   },
   
-  // Configuración de Nitro ultra optimizada
+  // Configuración de Nitro
   nitro: {
     preset: 'vercel',
     compressPublicAssets: true,
-    minify: true,
-    // Optimizaciones adicionales
-    experimental: {
-      wasm: true
-    },
-    // Almacenamiento (Redis eliminado para evitar errores de conexión en build)
-    // storage: {
-    //   redis: {
-    //     driver: 'redis',
-    //     /* configuración de Redis para cache si está disponible */
-    //   }
-    // },
-    // Cache agresivo
     routeRules: {
       '/api/**': { headers: { 'cache-control': 's-maxage=60' } },
       '/_nuxt/**': { headers: { 'cache-control': 'max-age=31536000' } },
-      // Prerenderizado desactivado temporalmente para evitar errores de build sin variables de entorno
+      // Prerenderizado desactivado temporalmente
       '/': { prerender: false }, 
       '/shop': { prerender: false },
       '/about': { prerender: false }
     }
   },
   
-  // Configuración de Vite ultra optimizada
+  // Configuración de Vite (simplificada para estabilidad)
   vite: {
     optimizeDeps: {
       include: ['vue-chartjs', 'chart.js', 'vue', '@vue/runtime-core', '@vue/runtime-dom']
     },
+    // Eliminamos optimizaciones agresivas de build/chunking que pueden romper la app
     build: {
-      sourcemap: false,
-      target: 'esnext',
-      minify: 'terser',
-      chunkSizeWarningLimit: 300,
-      rollupOptions: {
-        output: {
-          // Dejar que Rollup maneje el chunking automáticamente
-          manualChunks: (id: string) => {
-            if (id.includes('node_modules/chart.js') || id.includes('node_modules/vue-chartjs')) {
-              return 'chart'
-            }
-            if (id.includes('node_modules/@iconify')) {
-              return 'iconify'
-            }
-          },
-          chunkFileNames: (chunkInfo: any) => {
-            const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk'
-            return `js/[name]-[hash].js`
-          }
-        }
-      },
-      terserOptions: {
-        compress: {
-          drop_console: false,
-          drop_debugger: false
-        }
-      }
-    },
-    // Optimizaciones adicionales
-    define: {
-      __VUE_PROD_DEVTOOLS__: false,
-      __VUE_OPTIONS_API__: false
-    },
-    // Optimización de CSS
-    css: {
-      devSourcemap: false
+      sourcemap: false, // Opcional: poner en true si necesitas depurar en producción
     }
   }
 })
