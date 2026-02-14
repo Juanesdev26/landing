@@ -321,11 +321,8 @@ const isCustomer = computed(() => user.value?.role === 'customer')
 
 // Tema
 const { theme, isDark, toggleTheme, initTheme } = useTheme()
-const { $themeOptimizer } = useNuxtApp()
-
-// Usar toggle optimizado si está disponible
-const optimizedToggleTheme =
-  $themeOptimizer?.optimizedToggleTheme || toggleTheme
+// Usar toggle directamente
+const optimizedToggleTheme = toggleTheme
 
 // Inicializar tema al montar
 onMounted(() => {
