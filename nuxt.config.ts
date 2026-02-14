@@ -116,7 +116,7 @@ export default defineNuxtConfig({
   
   // Configuración de build ultra optimizada
   build: {
-    transpile: ["vue-chartjs"],
+    transpile: ["vue-chartjs", "@iconify/utils"],
     // Configuración simplificada
     analyze: false,
     extractCSS: false, // Simplificado
