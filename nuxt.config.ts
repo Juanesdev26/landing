@@ -138,19 +138,21 @@ export default defineNuxtConfig({
     experimental: {
       wasm: true
     },
-    storage: {
-      redis: {
-        driver: 'redis',
-        /* configuración de Redis para cache si está disponible */
-      }
-    },
+    // Almacenamiento (Redis eliminado para evitar errores de conexión en build)
+    // storage: {
+    //   redis: {
+    //     driver: 'redis',
+    //     /* configuración de Redis para cache si está disponible */
+    //   }
+    // },
     // Cache agresivo
     routeRules: {
       '/api/**': { headers: { 'cache-control': 's-maxage=60' } },
       '/_nuxt/**': { headers: { 'cache-control': 'max-age=31536000' } },
-      '/': { prerender: true },
-      '/shop': { prerender: true },
-      '/about': { prerender: true }
+      // Prerenderizado desactivado temporalmente para evitar errores de build sin variables de entorno
+      '/': { prerender: false }, 
+      '/shop': { prerender: false },
+      '/about': { prerender: false }
     }
   },
   
