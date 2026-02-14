@@ -163,20 +163,27 @@ export default defineNuxtConfig({
       sourcemap: false,
       target: 'esnext',
       minify: 'terser',
+      chunkSizeWarningLimit: 300,
       rollupOptions: {
         output: {
-          manualChunks: undefined, // Simplificado
-          // Optimizaciones de chunks
+          // Dejar que Rollup maneje el chunking automáticamente
+          manualChunks: (id: string) => {
+            if (id.includes('node_modules/chart.js') || id.includes('node_modules/vue-chartjs')) {
+              return 'chart'
+            }
+            if (id.includes('node_modules/@iconify')) {
+              return 'iconify'
+            }
+          },
           chunkFileNames: (chunkInfo: any) => {
             const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk'
             return `js/[name]-[hash].js`
           }
         }
       },
-      // Configuración simplificada
       terserOptions: {
         compress: {
-          drop_console: false, // Simplificado
+          drop_console: false,
           drop_debugger: false
         }
       }

@@ -1,1 +1,0 @@
-import{d as i,n as s}from"./C_EqDvdq.js";import"./C1R_VKXC.js";const n=i(async e=>{if(!["/","/login","/register","/about","/shop","/shop/category/*"].some(t=>t.endsWith("*")?e.path.startsWith(t.slice(0,-1)):e.path===t))return s("/login")});export{n as default};

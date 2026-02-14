@@ -1,2 +1,0 @@
-const a="@keyframes blob-5f336d44{0%{transform:translate(0) scale(1)}33%{transform:translate(30px,-50px) scale(1.1)}66%{transform:translate(-20px,20px) scale(.9)}to{transform:translate(0) scale(1)}}.animate-blob[data-v-5f336d44]{animation:blob-5f336d44 7s infinite}.animation-delay-2000[data-v-5f336d44]{animation-delay:2s}.animation-delay-4000[data-v-5f336d44]{animation-delay:4s}.animation-delay-1000[data-v-5f336d44]{animation-delay:1s}";export{a as u};
-//# sourceMappingURL=unauthorized-styles-1.mjs-1Hi7HVG8.mjs.map
