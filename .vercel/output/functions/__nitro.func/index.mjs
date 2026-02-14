@@ -1,2 +1,0 @@
-import o from"node:process";globalThis._importMeta_={url:import.meta.url,env:o.env};import{p as t,t as r,u as s}from"./chunks/_/nitro.mjs";import"@supabase/supabase-js";import"node:http";import"node:https";import"node:events";import"node:buffer";import"@supabase/ssr";import"@iconify/utils";import"node:crypto";import"consola";import"ioredis";import"node:fs";import"node:path";const p=r(s().h3App),listener=function(o,r){const s=o.headers["x-now-route-matches"];if(s){const{url:r}=t(s);r&&(o.url=r)}return p(o,r)};export{listener as default};
-//# sourceMappingURL=index.mjs.map
