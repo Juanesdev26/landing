@@ -2,21 +2,32 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import { requireAuth, respondSuccess, respondError } from '~/server/utils/auth'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 
-// Configurar MercadoPago
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-...',
-  options: { timeout: 5000 }
-})
+// Configurar MercadoPago (se inicializará en el handler con runtime config)
+let preference: Preference | null = null
 
-const preference = new Preference(client)
+function getMercadoPagoClient() {
+  const config = useRuntimeConfig()
+  const accessToken = config.mercadopagoAccessToken || process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-...'
+  
+  const client = new MercadoPagoConfig({
+    accessToken,
+    options: { timeout: 5000 }
+  })
+  
+  return new Preference(client)
+}
 
 export default defineEventHandler(async (event) => {
   const method = getMethod(event)
   const supabase = await serverSupabaseClient(event)
+  const config = useRuntimeConfig()
 
   if (method !== 'POST') {
     return respondError('Método no permitido')
   }
+
+  // Inicializar cliente de MercadoPago
+  const preference = getMercadoPagoClient()
 
   try {
     await requireAuth(event)
@@ -151,12 +162,12 @@ export default defineEventHandler(async (event) => {
         }
       },
       back_urls: {
-        success: `${process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/checkout/success?order_id=${orderData.id_order}`,
-        failure: `${process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/shop/cart?error=payment_failed`,
-        pending: `${process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/checkout/pending?order_id=${orderData.id_order}`
+        success: `${config.public.siteUrl}/checkout/success?order_id=${orderData.id_order}`,
+        failure: `${config.public.siteUrl}/shop/cart?error=payment_failed`,
+        pending: `${config.public.siteUrl}/checkout/pending?order_id=${orderData.id_order}`
       },
       auto_return: 'approved',
-      notification_url: `${process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/mercadopago/webhook`,
+      notification_url: `${config.public.siteUrl}/api/mercadopago/webhook`,
       external_reference: orderData.id_order,
       metadata: {
         order_id: orderData.id_order,

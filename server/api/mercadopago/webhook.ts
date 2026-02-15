@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const supabase = await serverSupabaseClient(event)
+  const config = useRuntimeConfig()
 
   console.log('🔔 Webhook de MercadoPago recibido:', body)
 
@@ -25,7 +26,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Obtener información del pago desde MercadoPago
-    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
+    const accessToken = config.mercadopagoAccessToken || process.env.MERCADOPAGO_ACCESS_TOKEN
     if (!accessToken) {
       console.error('❌ MERCADOPAGO_ACCESS_TOKEN no configurado')
       return { received: true }
