@@ -45,13 +45,13 @@ NUXT_PUBLIC_SITE_URL=https://tu-proyecto.vercel.app
 
 ### Paso 3: Configuración del Build
 
-Vercel detectará automáticamente:
+Vercel está configurado para usar **bun** (ver `vercel.json`):
 - **Framework Preset**: Nuxt.js
-- **Build Command**: `npm run build`
+- **Build Command**: `bun run build`
 - **Output Directory**: `.output` (automático con Nitro preset 'vercel')
-- **Install Command**: `npm install`
+- **Install Command**: `bun install`
 
-No necesitas cambiar nada, pero puedes verificar en **"Settings"** → **"General"**
+Puedes verificar en **"Settings"** → **"General"** que los comandos estén correctos
 
 ### Paso 4: Desplegar
 
